@@ -27,10 +27,15 @@ const GithubSyncPanel = ({ onUplink, isLinked = true }) => {
                         NEURAL_UPLINK // GITHUB_SYNC
                     </span>
                 </div>
-                {isLinked && (
+                {isLinked ? (
                     <div className="flex items-center gap-1">
                         <span className="text-[9px] text-neon-green font-mono">LINK_ESTABLISHED</span>
                         <Wifi size={10} className="text-neon-green animate-pulse" />
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-yellow-500 font-mono">LINK_REQUIRED</span>
+                        <Wifi size={10} className="text-yellow-500 animate-pulse-slow opacity-50" />
                     </div>
                 )}
             </div>
