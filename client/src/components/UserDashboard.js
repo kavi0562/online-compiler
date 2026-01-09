@@ -6,7 +6,8 @@ import HoloTerminal from "./scifi/HoloTerminal";
 import LanguageSelector from "./LanguageSelector";
 import GithubSyncPanel from "./scifi/GithubSyncPanel";
 import TemporalLogs from "./scifi/TemporalLogs";
-import { LayoutTemplate, Cpu, Database } from "lucide-react";
+import ReactorLogo from "./scifi/ReactorLogo";
+import { LayoutTemplate, Database } from "lucide-react";
 
 // Boilerplates
 const BOILERPLATES = {
@@ -16,7 +17,7 @@ const BOILERPLATES = {
   cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Energy Levels Optimal." << std::endl;\n    return 0;\n}',
 };
 
-function UserDashboard() {
+function UserDashboard({ githubToken }) {
   const [code, setCode] = useState(BOILERPLATES["python"] || "");
   const [language, setLanguage] = useState("python");
   const [languages, setLanguages] = useState([]);
@@ -161,8 +162,8 @@ function UserDashboard() {
         {/* Header / Stats (Top Left) */}
         <div className="col-span-12 md:col-span-3 row-span-2 bg-glass border border-glass rounded-2xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-neon-cyan/10 rounded-lg border border-neon-cyan/30">
-              <Cpu className="text-neon-cyan" size={24} />
+            <div className="p-2 bg-neon-cyan/5 rounded-lg border border-neon-cyan/20">
+              <ReactorLogo className="w-6 h-6 text-neon-cyan" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-wider text-white">REACTOR<span className="text-neon-cyan">.IO</span></h1>
@@ -217,7 +218,7 @@ function UserDashboard() {
         <div className="hidden md:flex col-span-4 row-span-7 flex-col gap-4">
           <GithubSyncPanel
             onUplink={handleUplink}
-            isLinked={true}
+            isLinked={!!githubToken}
           />
           <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} activeLogId={activeLogId} />
         </div>
