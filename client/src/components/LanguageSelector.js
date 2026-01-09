@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { ChevronDown, Check, Zap } from "lucide-react";
 
 const LanguageSelector = ({ languages, selected, onSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
     const wrapperRef = useRef(null);
 
     // Close dropdown when clicking outside
@@ -13,107 +13,76 @@ const LanguageSelector = ({ languages, selected, onSelect }) => {
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [wrapperRef]);
 
-    // Filter languages based on search term
-    const filteredLanguages = languages.filter((lang) =>
-        lang.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const handleSelect = (langKey) => {
-        onSelect(langKey);
-        setIsOpen(false);
-        setSearchTerm(""); // Reset search after selection
-    };
-
-    const selectedLangName = languages.find(l => l.key === selected)?.name || "Select Language";
+    // Find current language object
+    const selectedLang = languages.find((lang) => lang.key === selected) || {};
 
     return (
-        <div ref={wrapperRef} style={{ position: "relative", width: "300px", display: "inline-block" }}>
-            {/* Dropdown Header (Input-like) */}
-            <div
-                onClick={() => setIsOpen(!isOpen)}
-                style={{
-                    padding: "10px",
-                    background: "#333",
-                    color: "#fff",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                    border: "1px solid #555",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
-                }}
-            >
-                <span>{languages.length === 0 ? "Loading..." : selectedLangName}</span>
-                <span>{isOpen ? "▲" : "▼"}</span>
+        <div className="relative w-full" ref={wrapperRef}>
+
+            {/* Sci-Fi Header */}
+            <div className="flex items-center justify-between mb-2">
+                {/* Title handled by parent for layout flexibility, but included here optionally if standalone usage needed */}
             </div>
 
-            {/* Dropdown Content */}
-            {isOpen && (
-                <div
-                    style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        width: "100%",
-                        maxHeight: "300px",
-                        overflowY: "auto",
-                        background: "#222",
-                        border: "1px solid #555",
-                        borderRadius: "5px",
-                        zIndex: 99999,
-                        marginTop: "5px",
-                        boxShadow: "0 4px 6px rgba(0,0,0,0.3)"
-                    }}
-                >
-                    {/* Search Input */}
-                    <input
-                        type="text"
-                        placeholder="Search language..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: "100%",
-                            padding: "10px",
-                            background: "#333",
-                            color: "#fff",
-                            border: "none",
-                            borderBottom: "1px solid #555",
-                            boxSizing: "border-box", // Important for padding
-                            outline: "none"
-                        }}
-                        autoFocus
-                    />
+            {/* Dropdown Trigger */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full flex items-center justify-between px-4 py-3 
+                   bg-[#0a0a1a]/80 border ${isOpen ? 'border-neon-cyan shadow-[0_0_15px_rgba(0,243,255,0.3)]' : 'border-[#30363d]'} 
+                   rounded-xl backdrop-blur-md transition-all duration-300 hover:border-neon-cyan/50 group`}
+            >
+                <div className="flex items-center gap-3">
+                    <div className={`p-1 rounded bg-neon-cyan/10 group-hover:bg-neon-cyan/20 transition-colors`}>
+                        <Zap size={14} className="text-neon-cyan" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                        <span className="text-[10px] text-gray-500 tracking-widest font-bold">CURRENT_MODULE</span>
+                        <span className="text-sm font-bold text-white tracking-wide">{selectedLang.name || "Select..."}</span>
+                    </div>
+                </div>
+                <ChevronDown
+                    size={16}
+                    className={`text-neon-cyan transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                />
+            </button>
 
-                    {/* Language List */}
-                    {filteredLanguages.length > 0 ? (
-                        filteredLanguages.map((lang) => (
-                            <div
-                                key={lang.key}
-                                onClick={() => handleSelect(lang.key)}
-                                style={{
-                                    padding: "10px",
-                                    cursor: "pointer",
-                                    background: selected === lang.key ? "#444" : "transparent",
-                                    color: "#eee",
-                                    borderBottom: "1px solid #333"
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = "#555")}
-                                onMouseLeave={(e) =>
-                                (e.currentTarget.style.background =
-                                    selected === lang.key ? "#444" : "transparent")
-                                }
-                            >
-                                {lang.name} <span style={{ fontSize: "12px", color: "#888" }}>({lang.version})</span>
-                            </div>
-                        ))
-                    ) : (
-                        <div style={{ padding: "10px", color: "#888" }}>No languages found</div>
-                    )}
+            {/* Animated Dropdown Menu */}
+            {isOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-50">
+                    {/* Glassmorphic Container */}
+                    <div className="bg-[#050510]/95 border border-neon-cyan/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] 
+                          backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+                        {/* Decorative Tech Header */}
+                        <div className="h-1 bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan opacity-50"></div>
+
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar p-1">
+                            {languages.map((lang) => (
+                                <button
+                                    key={lang.key}
+                                    onClick={() => {
+                                        onSelect(lang.key);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left transition-all
+                                ${selected === lang.key
+                                            ? 'bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan shadow-[inset_0_0_10px_rgba(0,243,255,0.1)]'
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-mono text-xs opacity-50">0{languages.indexOf(lang) + 1}</span>
+                                        <span className="font-bold tracking-wide">{lang.name}</span>
+                                    </div>
+
+                                    {selected === lang.key && <Check size={14} className="text-neon-cyan drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]" />}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
