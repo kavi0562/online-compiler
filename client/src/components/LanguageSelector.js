@@ -51,7 +51,7 @@ const LanguageSelector = ({ languages, selected, onSelect }) => {
 
             {/* Animated Dropdown Menu */}
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-50">
+                <div className="absolute top-full left-0 right-0 mt-2 z-[9999]">
                     {/* Glassmorphic Container */}
                     <div className="bg-[#050510]/95 border border-neon-cyan/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] 
                           backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
