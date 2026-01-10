@@ -1,24 +1,83 @@
-import { useState } from "react";
-import { Lock, Mail, ChevronRight, Github, Chrome, Cpu, ShieldCheck } from "lucide-react";
 
-function Login({ onLogin, loading }) {
-  const [isLogin, setIsLogin] = useState(true);
-  // Email/Password states kept for visual "Manual Override" simulation
+import { useState } from "react";
+import { Lock, Mail, ChevronRight, Github, Chrome, Cpu, ShieldCheck, Link } from "lucide-react";
+
+function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAccountLinking, loading }) {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showLinkOption, setShowLinkOption] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setError("");
+    setSuccess("");
+    if (!email) {
+      setError("ENTER_NET_ADDRESS_FIRST");
+      return;
+    }
+    const result = await onPasswordReset(email);
+    if (result.success) {
+      setSuccess(result.message);
+    } else {
+      setError(result.message);
+    }
+  };
+
+  const handleLinkAccount = async () => {
+    setError("");
+    setSuccess("");
+    const result = await onAccountLinking(email, password);
+    if (result.success) {
+      setSuccess(result.message);
+      setShowLinkOption(false);
+    } else {
+      setError(result.message);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("AUTH PROTOCOL: STANDARD_LOGIN DISABLED. USE BIOMETRIC_UPLINK (GOOGLE/GITHUB).");
+    setError("");
+    setShowLinkOption(false);
+
+    let authError = null;
+    if (!isRegistering) {
+      // Call Manual Login
+      authError = await onManualLogin(email, password);
+      // Success is handled by App.js (redirects to /admin or /user via auth listener)
+    } else {
+      // Call Manual Signup
+      authError = await onManualSignup(email, password);
+
+      // Smart Mode Switch: If email exists, switch to login automatically
+      if (authError === "auth/email-already-in-use") {
+        setError(">> ACCOUNT_EXISTS: LINK_PASSWORD_TO_GOOGLE?");
+        setShowLinkOption(true); // Show the Link Button
+        return;
+      }
+    }
+
+    if (authError) {
+      // Map Firebase/System errors to UI messages
+      let displayError = authError;
+      if (authError === "auth/wrong-password") displayError = "INVALID_SECURITY_KEY";
+      if (authError === "auth/user-not-found") displayError = "UNKNOWN_IDENTITY";
+      if (authError === "auth/weak-password") displayError = "SECURITY_KEY_TOO_WEAK";
+      if (authError === "auth/invalid-email") displayError = "MALFORMED_ADDRESS";
+
+      setError(displayError);
+    }
   };
 
   const toggleMode = () => {
-    setIsLogin(!isLogin);
+    setIsRegistering(!isRegistering);
     setError("");
-    setEmail("");
-    setPassword("");
+    setShowLinkOption(false);
+    // Keep email populated for convenience
+    // setPassword(""); 
     setFullName("");
   };
 
@@ -56,16 +115,36 @@ function Login({ onLogin, loading }) {
 
           {/* Error Display */}
           {error && (
-            <div className="mb-6 p-3 bg-neon-red/10 border border-neon-red/50 rounded flex items-center gap-2 text-xs text-neon-red font-mono animate-flicker">
-              <Cpu size={14} />
-              <span>ERROR: {error}</span>
+            <div className="mb-6 p-3 bg-neon-red/10 border border-neon-red/50 rounded flex flex-col gap-2 text-xs text-neon-red font-mono animate-flicker">
+              <div className="flex items-center gap-2">
+                <Cpu size={14} />
+                <span>SYSTEM_ERROR: {error}</span>
+              </div>
+
+              {/* Account Linking Button inside Error Box */}
+              {showLinkOption && (
+                <button
+                  onClick={handleLinkAccount}
+                  type="button"
+                  className="mt-2 w-full py-2 bg-neon-cyan/20 border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/30 rounded flex items-center justify-center gap-2 transition-all font-bold"
+                >
+                  <Link size={14} /> YES, LINK TO GOOGLE
+                </button>
+              )}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 p-3 bg-neon-green/10 border border-neon-green/50 rounded flex items-center gap-2 text-xs text-neon-green font-mono animate-pulse">
+              <ShieldCheck size={14} />
+              <span>{success}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Signup Name Field */}
-            {!isLogin && (
+            {/* Signup Name Field - Only show if Registering */}
+            {isRegistering && (
               <div className="space-y-1 group">
                 <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} ENTER_IDENTITY:</label>
                 <div className="relative">
@@ -78,7 +157,7 @@ function Login({ onLogin, loading }) {
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
                     placeholder="FULL_NAME"
-                    required={!isLogin}
+                    required={isRegistering}
                   />
                 </div>
               </div>
@@ -120,14 +199,27 @@ function Login({ onLogin, loading }) {
               </div>
             </div>
 
-            {/* Submit Button (Disabled for now, forcing social) */}
+            {/* Forgot Password Link - Only show if NOT registering */}
+            {!isRegistering && (
+              <div className="flex justify-end -mt-4">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-[10px] text-neon-cyan/60 hover:text-neon-cyan tracking-widest font-mono hover:underline"
+                >
+                  FORGOT_ACCESS_KEY?
+                </button>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full relative group overflow-hidden bg-neon-cyan/5 border border-neon-cyan/30 text-neon-cyan/50 font-bold py-3 rounded-lg tracking-[0.2em] cursor-not-allowed"
+              className="w-full relative group overflow-hidden bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan font-bold py-3 rounded-lg tracking-[0.2em] hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.3)] transition-all cursor-pointer"
             >
               <span className="flex items-center justify-center gap-2">
-                <Lock size={14} /> MANUAL_OVERRIDE_LOCKED
+                <Lock size={14} /> {loading ? "PROCESSING..." : (isRegistering ? "REGISTER" : "LOGIN")}
               </span>
             </button>
           </form>
@@ -167,10 +259,10 @@ function Login({ onLogin, loading }) {
           <div className="mt-8 text-center">
             <button
               onClick={toggleMode}
-              className="text-xs text-gray-500 hover:text-neon-cyan transition-colors flex items-center justify-center gap-1 mx-auto group"
+              className="text-xs text-gray-500 hover:text-neon-cyan transition-colors flex items-center justify-center gap-1 mx-auto group cursor-pointer"
             >
               <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              {isLogin ? ">> CREATE NEW ID" : ">> ACCESS EXISTING ID"}
+              {isRegistering ? ">> EXISTING_USER? LOGIN_IDENTITY" : ">> NEW_USER? REGISTER_IDENTITY"}
             </button>
           </div>
 

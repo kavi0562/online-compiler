@@ -71,7 +71,7 @@ function UserDashboard({ githubToken }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:5051/api/compiler/run",
+        "http://localhost:5051/api/compiler/execute",
         { code, language, input },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
