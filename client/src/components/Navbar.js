@@ -1,8 +1,23 @@
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldAlert } from "lucide-react";
 import ReactorLogo from "./scifi/ReactorLogo";
+import { Link } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 
-function Navbar({ user, onLogout }) {
+function Navbar({ user, role }) {
   if (!user) return null;
+
+  const isAdmin = role === 'admin';
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.clear();
+      window.location.href = "/"; // Force hard refresh
+    } catch (error) {
+      console.error("LOGOUT_FAILURE:", error);
+    }
+  };
 
   return (
     <div className="absolute top-0 w-full p-6 z-[9999] flex items-center justify-between pointer-events-none">
@@ -18,6 +33,16 @@ function Navbar({ user, onLogout }) {
       </div>
 
       <div className="flex items-center gap-4 pointer-events-auto">
+
+        {/* Admin Link */}
+
+        {isAdmin && (
+          <Link to="/admin" className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/30 rounded-full hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all group">
+            <ShieldAlert size={14} className="text-red-500 animate-pulse" />
+            <span className="text-[10px] font-bold tracking-widest text-red-500 group-hover:text-red-400 font-mono">[ ADMIN_CORE ]</span>
+          </Link>
+        )}
+
         {/* User Profile */}
         <div className="flex items-center gap-3 bg-glass border border-glass rounded-full px-4 py-2 hover:border-neon-cyan/50 transition-all group backdrop-blur-md">
 
@@ -43,7 +68,7 @@ function Navbar({ user, onLogout }) {
 
         {/* Disconnect Button */}
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="p-2 bg-neon-red/10 border border-neon-red/30 rounded-full text-neon-red hover:bg-neon-red/20 hover:shadow-[0_0_15px_rgba(255,50,50,0.4)] transition-all cursor-pointer"
           title="DISCONNECT SESSION"
         >

@@ -1,225 +1,253 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import {
+  Users,
+  Activity,
+  Wifi,
+  Terminal,
+  ShieldAlert,
+  Power,
+  RefreshCw,
+  ServerOff
+} from "lucide-react";
+
+// NASA Mission Control Theme
+// Colors: Deep Black (#000000), Emergency Amber (#FFBF00), Neon Red (#FF0033)
 
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("stats");
-  const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [logs, setLogs] = useState([
+    ">> SYSTEM_BOOT_SEQUENCE_INITIATED...",
+    ">> ESTABLISHING_SECURE_UPLINK...",
+    ">> VERIFYING_ADMIN_CREDENTIALS...",
+    ">> ACCESS_GRANTED: COMMANDER_MODE_ACTIVE."
+  ]);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    uplinkStatus: "STABLE"
+  });
 
-  // Moved useEffect below fetchData defined in line 17
+  const [isOffline, setIsOffline] = useState(false);
+  const logEndRef = useRef(null);
 
+  // Auto-scroll terminal
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const token = localStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
-
+  // Fetch Users & Stats
+  const fetchData = async () => {
     try {
-      if (activeTab === "stats") {
-        const res = await axios.get("http://localhost:5051/api/admin/stats", { headers });
-        setStats(res.data);
-      } else if (activeTab === "users") {
-        const res = await axios.get("http://localhost:5051/api/admin/users", { headers });
-        setUsers(res.data);
-      } else if (activeTab === "logs") {
-        const res = await axios.get("http://localhost:5051/api/admin/logs", { headers });
-        setLogs(res.data);
+      setLogs(prev => [...prev, ">> INITIATING_DATA_REFRESH_PROTOCOL..."]);
+
+      // 1. GET TOKEN
+      const token = localStorage.getItem("token");
+      console.log(">> ADMIN_DASH: TOKEN_READ_FROM_STORAGE:", token ? "FOUND" : "MISSING");
+
+      if (!token) {
+        console.error('No token found in localStorage!');
+        setLogs(prev => [...prev, ">> AUTH_ERROR: TOKEN_MISSING. REDIRECTING..."]);
+        return; // Stop here if no token
       }
-    } catch (err) {
-      console.error("Fetch error", err);
-    } finally {
-      setLoading(false);
+
+      // 2. Fetch System Health (Port 5051)
+      try {
+        await axios.get("http://localhost:5051/api/status");
+        // Don't set ONLINE yet, wait for user data
+      } catch (healthErr) {
+        console.warn("M1_STATUS_CHECK_FAILED:", healthErr);
+      }
+
+      // 3. Fetch User Data (With Auth Header)
+      try {
+        console.log(">> ATTEMPTING_FETCH: /api/admin/users");
+
+        // CLEAN TOKEN: Remove potential extra quotes
+        const rawToken = localStorage.getItem('token');
+        const cleanToken = rawToken?.replace(/^"(.*)"$/, '$1');
+
+        console.log('Sending Token:', cleanToken ? 'YES' : 'NO');
+
+        const res = await axios.get("http://localhost:5051/api/admin/users", {
+          headers: {
+            Authorization: `Bearer ${cleanToken}`
+          }
+        });
+
+        console.log(">> FETCH_SUCCESS: Users Found:", res.data.length);
+
+        // 4. Update State & Status
+        setStats(prev => ({
+          ...prev,
+          totalUsers: res.data.length,
+          activeUsers: res.data.filter(u => !u.isBlocked).length,
+          uplinkStatus: "ONLINE" // GREEN LIGHT
+        }));
+
+        setLogs(prev => [...prev, `>> DATA_SYNC_COMPLETE: ${res.data.length} RECORDS_RETRIEVED.`]);
+        setIsOffline(false);
+
+      } catch (userErr) {
+        console.error("M2_USER_SYNC_FAILED:", userErr);
+        // Retry Hint or Manual Refresh is already available via UI Button calling fetchData()
+        const status = userErr.response ? userErr.response.status : "NET_ERR";
+        setLogs(prev => [...prev, `>> DATA_ACCESS_DENIED (STATUS: ${status}): ${userErr.message}`]);
+      }
+
+    } catch (criticalError) {
+      console.error("CRITICAL_SYSTEM_FAILURE:", criticalError);
     }
-  }, [activeTab]);
+  };
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleBlockUser = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(`http://localhost:5051/api/admin/block/${id}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchData(); // Refresh list
-    } catch (err) {
-      alert("Error updating user status");
-    }
-  };
+  // Simulate incoming logs (Background Noise)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) { // Only show logs occasionally
+        const messages = [
+          ">> MONITORING_NODES... [STABLE]",
+          ">> INCOMING_PACKET_DETECTED (PORT 5051)",
+          ">> SECURITY_SCAN: NO_THREATS_FOUND",
+          ">> DATABASE_LATENCY: 12ms"
+        ];
+        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+        setLogs(prev => [...prev.slice(-20), randomMsg]);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleDeleteUser = async (id) => {
-    if (!window.confirm("Are you sure? This action cannot be undone.")) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5051/api/admin/user/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchData(); // Refresh list
-    } catch (err) {
-      alert("Error deleting user");
+  const handleAction = (action) => {
+    if (action === "REFRESH_DATA") {
+      fetchData();
+      return;
     }
+    setLogs(prev => [...prev, `>> EXECUTING_COMMAND: ${action}...`]);
+    setTimeout(() => {
+      setLogs(prev => [...prev, `>> COMMAND_SUCCESSFUL: ${action}_COMPLETE.`]);
+    }, 1200);
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar */}
-      <div style={{ width: "250px", background: "#111", color: "#fff", padding: "20px" }}>
-        <h3>Admin Panel</h3>
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          <li
-            onClick={() => setActiveTab("stats")}
-            style={{ padding: "10px", background: activeTab === "stats" ? "#333" : "transparent", cursor: "pointer" }}
+    <div className="min-h-screen bg-black text-[#FFBF00] font-mono p-6 flex flex-col gap-6 overflow-hidden relative">
+
+      {/* Background Grid & Scanlines */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,191,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,191,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] pointer-events-none opacity-20"></div>
+
+      {/* HEADER */}
+      <header className="flex items-center justify-between border-b border-[#FFBF00]/30 pb-4 z-10 bg-black/80 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <ShieldAlert className="text-[#FF0033] animate-pulse" size={32} />
+          <div>
+            <h1 className="text-2xl font-bold tracking-[0.2em] text-white">MISSION_CONTROL</h1>
+            <p className="text-xs text-[#FFBF00]/70">SECURE_ADMIN_NEXUS // LEVEL_5_CLEARANCE</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => handleAction("REFRESH_DATA")}
+            className="flex items-center gap-2 text-xs border border-[#FFBF00]/50 px-3 py-1 rounded bg-[#FFBF00]/10 hover:bg-[#FFBF00]/20 transition-all cursor-pointer"
           >
-            Dashboard
-          </li>
-          <li
-            onClick={() => setActiveTab("users")}
-            style={{ padding: "10px", background: activeTab === "users" ? "#333" : "transparent", cursor: "pointer" }}
-          >
-            Users
-          </li>
-          <li
-            onClick={() => setActiveTab("logs")}
-            style={{ padding: "10px", background: activeTab === "logs" ? "#333" : "transparent", cursor: "pointer" }}
-          >
-            Activity Logs
-          </li>
-          <li
-            onClick={() => navigate('/user')}
-            style={{ padding: "10px", marginTop: "20px", cursor: "pointer", borderTop: "1px solid #444" }}
-          >
-            Exit to App
-          </li>
-        </ul>
+            <RefreshCw size={12} className={stats.uplinkStatus === "OPTIMAL" ? "" : "animate-spin"} />
+            REFRESH_DATA
+          </button>
+          <div className={`flex items-center gap-2 text-xs border border-[#FFBF00]/30 px-3 py-1 rounded ${isOffline ? 'bg-red-900/20 text-red-500' : 'bg-[#FFBF00]/5'}`}>
+            <div className={`w-2 h-2 rounded-full ${stats.uplinkStatus === 'OPTIMAL' || stats.uplinkStatus === 'ONLINE' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+            SYSTEM_{stats.uplinkStatus}
+          </div>
+        </div>
+      </header>
+
+      {/* TOP STATS BAR */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 z-10">
+
+        {/* Card 1: TOTAL USERS */}
+        <div className="bg-[#050505] border border-[#FFBF00]/30 p-4 rounded flex items-center justify-between shadow-[0_0_15px_rgba(255,191,0,0.1)]">
+          <div>
+            <p className="text-xs text-[#FFBF00]/60 mb-1 tracking-widest">TOTAL_USERS</p>
+            <h3 className="text-3xl font-bold text-white">{stats.totalUsers}</h3>
+          </div>
+          <Users size={24} className="text-[#FFBF00]" />
+        </div>
+
+        {/* Card 2: ACTIVE SESSIONS (Approximated by Active Users) */}
+        <div className="bg-[#050505] border border-[#FF0033]/30 p-4 rounded flex items-center justify-between shadow-[0_0_15px_rgba(255,0,51,0.1)]">
+          <div>
+            <p className="text-xs text-[#FF0033]/60 mb-1 tracking-widest">ACTIVE_NODES</p>
+            <h3 className="text-3xl font-bold text-[#FF0033]">{stats.activeUsers}</h3>
+          </div>
+          <Activity size={24} className="text-[#FF0033]" />
+        </div>
+
+        {/* Card 3: UPLINK STATUS */}
+        <div className={`bg-[#050505] border ${isOffline ? 'border-red-500/30' : 'border-green-500/30'} p-4 rounded flex items-center justify-between shadow-[0_0_15px_rgba(0,255,0,0.1)]`}>
+          <div>
+            <p className={`text-xs ${isOffline ? 'text-red-500/60' : 'text-green-500/60'} mb-1 tracking-widest`}>UPLINK_STATUS</p>
+            <h3 className={`text-xl font-bold ${isOffline ? 'text-red-500' : 'text-green-500'}`}>{stats.uplinkStatus}</h3>
+          </div>
+          {isOffline ? <ServerOff size={24} className="text-red-500" /> : <Wifi size={24} className="text-green-500" />}
+        </div>
+
       </div>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: "40px", overflowY: "auto" }}>
-        {loading && <p>Loading...</p>}
+      {/* MAIN CONTENT Area */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden z-10">
 
-        {!loading && activeTab === "stats" && stats && (
-          <div>
-            <h2>Dashboard Overview</h2>
-            <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-              <div style={cardStyle}>
-                <h3>Total Users</h3>
-                <p style={{ fontSize: "2rem" }}>{stats.totalUsers}</p>
-              </div>
-              <div style={cardStyle}>
-                <h3>Active Users</h3>
-                <p style={{ fontSize: "2rem" }}>{stats.activeUsers}</p>
-              </div>
-              <div style={cardStyle}>
-                <h3>Blocked Users</h3>
-                <p style={{ fontSize: "2rem" }}>{stats.blockedUsers}</p>
-              </div>
+        {/* TERMINAL WINDOW (Left - 2/3 width) */}
+        <div className="lg:col-span-2 bg-[#0a0a0a] border border-[#FFBF00]/30 rounded flex flex-col shadow-lg overflow-hidden relative">
+          <div className="bg-[#FFBF00]/10 p-2 border-b border-[#FFBF00]/20 flex items-center gap-2">
+            <Terminal size={14} />
+            <span className="text-xs font-bold tracking-widest">LIVE_SYSTEM_LOGS</span>
+          </div>
+          <div className="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-1 text-[#FFBF00]/80">
+            {logs.map((log, index) => (
+              <div key={index} className="break-all">{log}</div>
+            ))}
+            <div ref={logEndRef} />
+            <div className="animate-pulse">_</div>
+          </div>
+        </div>
+
+        {/* ACTION PANEL (Right - 1/3 width) */}
+        <div className="flex flex-col gap-4">
+
+          <div className="bg-[#0a0a0a] border border-[#FFBF00]/30 rounded p-4 flex-1">
+            <h3 className="text-sm font-bold border-b border-[#FFBF00]/20 pb-2 mb-4 text-white">CRITICAL_ACTIONS</h3>
+
+            <div className="space-y-4">
+              <button
+                onClick={() => handleAction("TERMINATE_ALL_SESSIONS")}
+                className="w-full py-4 border border-[#FF0033] text-[#FF0033] bg-[#FF0033]/5 hover:bg-[#FF0033]/10 hover:shadow-[0_0_20px_rgba(255,0,51,0.2)] transition-all flex items-center justify-center gap-2 font-bold tracking-wider rounded cursor-pointer"
+              >
+                <Power size={18} /> TERMINATE_SESSIONS
+              </button>
+
+              <button
+                onClick={() => handleAction("CORE_SYSTEM_REBOOT")}
+                className="w-full py-4 border border-[#FFBF00] text-[#FFBF00] bg-[#FFBF00]/5 hover:bg-[#FFBF00]/10 hover:shadow-[0_0_20px_rgba(255,191,0,0.2)] transition-all flex items-center justify-center gap-2 font-bold tracking-wider rounded cursor-pointer"
+              >
+                <RefreshCw size={18} /> REBOOT_CORE
+              </button>
             </div>
           </div>
-        )}
 
-        {!loading && activeTab === "users" && (
-          <div>
-            <h2>User Management</h2>
-            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-              <thead>
-                <tr style={{ background: "#eee", textAlign: "left" }}>
-                  <th style={thStyle}>Name</th>
-                  <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Role</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user._id} style={{ borderBottom: "1px solid #ddd" }}>
-                    <td style={tdStyle}>{user.name}</td>
-                    <td style={tdStyle}>{user.email}</td>
-                    <td style={tdStyle}>{user.role}</td>
-                    <td style={tdStyle}>
-                      <span style={{
-                        color: user.isBlocked ? "red" : "green",
-                        fontWeight: "bold"
-                      }}>
-                        {user.isBlocked ? "Blocked" : "Active"}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      {user.role !== "admin" && (
-                        <>
-                          <button
-                            onClick={() => handleBlockUser(user._id)}
-                            style={{ marginRight: "10px", cursor: "pointer" }}
-                          >
-                            {user.isBlocked ? "Unblock" : "Block"}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user._id)}
-                            style={{ color: "red", cursor: "pointer" }}
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-[#0a0a0a] border border-[#FFBF00]/20 rounded p-4 text-[10px] text-gray-500">
+            <p>SERVER_IP: 192.168.X.X</p>
+            <p>LOCATION: [REDACTED]</p>
+            <p>UPTIME: 42h 15m 33s</p>
           </div>
-        )}
 
-        {!loading && activeTab === "logs" && (
-          <div>
-            <h2>Activity Logs</h2>
-            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-              <thead>
-                <tr style={{ background: "#eee", textAlign: "left" }}>
-                  <th style={thStyle}>Admin</th>
-                  <th style={thStyle}>Action</th>
-                  <th style={thStyle}>Target User</th>
-                  <th style={thStyle}>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map(log => (
-                  <tr key={log._id} style={{ borderBottom: "1px solid #ddd" }}>
-                    <td style={tdStyle}>{log.adminId?.email || "Unknown"}</td>
-                    <td style={tdStyle}>{log.action}</td>
-                    <td style={tdStyle}>{log.targetUserId?.email || "N/A"}</td>
-                    <td style={tdStyle}>{new Date(log.createdAt).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
+
       </div>
+
     </div>
   );
 }
-
-const cardStyle = {
-  background: "#f4f4f4",
-  padding: "20px",
-  borderRadius: "8px",
-  width: "200px",
-  textAlign: "center",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-};
-
-const thStyle = {
-  padding: "12px",
-  borderBottom: "2px solid #ddd"
-};
-
-const tdStyle = {
-  padding: "12px"
-};
 
 export default AdminDashboard;

@@ -12,6 +12,7 @@ const router = express.Router();
  */
 router.get("/users", auth, admin, async (req, res) => {
   try {
+    console.log("Fetching users for Admin...");
     const users = await User.find().select("-password");
     res.json(users);
   } catch (err) {
