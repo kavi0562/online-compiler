@@ -28,12 +28,14 @@ module.exports = async (req, res, next) => {
     // console.log(">> Firebase Auth Success:", decodedToken.email);
 
     // Normalize user object
+    const isAdmin = decodedToken.email === "n.kavishiksuryavarma@gmail.com";
     req.user = {
       id: decodedToken.uid, // Firebase UID
       email: decodedToken.email,
-      role: decodedToken.admin ? 'admin' : 'user', // Custom claims if set
+      role: decodedToken.admin || isAdmin ? 'admin' : 'user', // Force Admin if verified email matches
       provider: 'firebase'
     };
+    if (isAdmin) console.log(">> 🛡️ HARDCODED_ADMIN_DETECTED_IN_MIDDLEWARE");
     return next();
 
   } catch (firebaseError) {

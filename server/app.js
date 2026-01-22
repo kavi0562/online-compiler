@@ -82,27 +82,24 @@ app.get("/api/status", (req, res) => {
 // We use the existing files but ensure they are mounted correctly
 // We need to double check that specific routes requested exist in them.
 
-// Route for /api/users/sync is likely in ./routes/users.js
-app.use("/api/users", require("./routes/users"));
+app.use("/api/ai", require("./routes/ai"));
 
-// Route for /api/admin/users is in ./routes/admin.js
+// 3. COMPILER ROUTE (Real Implementation)
+// This fixes the 404 for /languages and /execute (via /run)
+// Note: Frontend calls /api/compiler/languages and /api/compiler/execute (which we need to map to /run in the router or update frontend)
+// Looking at UserDashboard.js: axios.get("http://localhost:5051/api/compiler/languages")
+// AND axios.post("http://localhost:5051/api/compiler/execute")
+// But compiler.js has router.post("/run") ... we should align them.
+// For now, let's mount it at /api/compiler and I will update compiler.js to handle "execute" or I will aliasing it here?
+// Better: Mount it, and inside compiler.js ensure paths match.
+app.use("/api/compiler", require("./routes/compiler"));
+app.use("/api/github", require("./routes/github"));
+app.use("/api/payment", require("./routes/payment"));
 app.use("/api/admin", require("./routes/admin"));
-
-// Route for /api/auth/register is in ./routes/auth.js
+app.use("/api/users", require("./routes/users"));
 app.use("/api/auth", require("./routes/auth"));
-
-// 3. COMPILER MOCK ROUTE
-app.post("/api/compiler/execute", (req, res) => {
-  const { code, language } = req.body;
-  console.log(">> EXECUTING_CODE:", language);
-  // Mock execution result
-  setTimeout(() => {
-    res.json({
-      output: `> EXECUTION_SUCCESSFUL [${language}]\n> Output:\nHello World from Reactor IO!\n> [Process exited with code 0]`,
-      isError: false
-    });
-  }, 1000);
-});
+app.use("/api/test", require("./routes/test"));
+app.use("/api/share", require("./routes/share"));
 
 
 /* =======================

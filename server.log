@@ -1,5 +1,41 @@
 🔥 CORRECT SERVER app.js RUNNING
-[dotenv@17.2.3] injecting env (2) from server/.env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (3) from server/.env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+🔥 Firebase Admin Initialized with Service Account
 MONGO_URI = mongodb+srv://admin:Kavishik85@kavi.oys8d01.mongodb.net/compiler
 🚀 Server running on port 5051
 ✅ MongoDB Connected Successfully
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share

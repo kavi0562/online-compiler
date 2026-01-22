@@ -58,7 +58,7 @@ const HoloTerminal = ({ output, input, isError, onClear }) => {
             <div className="relative z-30 flex items-center justify-between px-4 py-2 bg-[#0a0a1a] border-b border-[#30363d]">
                 <div className="flex items-center gap-2 text-neon-cyan/80">
                     <Terminal size={14} />
-                    <span className="text-[10px] tracking-[0.2em] font-bold font-mono">STDOUT // FEED_ACTIVE</span>
+                    <span className="text-[10px] tracking-[0.2em] font-bold font-mono">OUTPUT TERMINAL</span>
                 </div>
                 <div className="flex gap-2">
                     <button

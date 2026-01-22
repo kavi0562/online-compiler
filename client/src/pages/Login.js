@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Lock, Mail, ChevronRight, Github, Chrome, Cpu, ShieldCheck, Link } from "lucide-react";
 
 function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAccountLinking, loading }) {
@@ -10,6 +10,23 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showLinkOption, setShowLinkOption] = useState(false);
+
+  // Use ref to track if we've already tried auto-triggering
+  const hasAutoTriggered = useRef(false);
+
+  // Auto-trigger social login if requested via URL
+  useEffect(() => {
+    if (hasAutoTriggered.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const trigger = params.get('auto_trigger');
+
+    if (trigger === 'github' && !loading) {
+      hasAutoTriggered.current = true;
+      // Best effort auto-click
+      onLogin('github');
+    }
+  }, [loading, onLogin]);
 
   const handleForgotPassword = async () => {
     setError("");

@@ -123,7 +123,8 @@ const getFileName = (language) => {
   }
 };
 
-router.post("/run", async (req, res) => {
+router.post("/execute", async (req, res) => {
+  // Logic remains the same, just renamed endpoint to match frontend
   const { code, language, input } = req.body;
 
   if (!code || !language) {
@@ -155,7 +156,8 @@ router.post("/run", async (req, res) => {
     // Check if there was a compile error first
     if (compile && compile.code !== 0) {
       return res.json({
-        output: `❌ Compilation Error:\n${compile.stderr || compile.stdout || "Unknown error"}`
+        output: `❌ Compilation Error:\n${compile.stderr || compile.stdout || "Unknown error"}`,
+        isError: true
       });
     }
 
@@ -167,7 +169,10 @@ router.post("/run", async (req, res) => {
       output = `⚠️ Time Limit Exceeded\nYour code took too long to execute. Infinite loop handled.`;
     }
 
-    res.json({ output: output || "⚠️ No output" });
+    res.json({
+      output: output || "⚠️ No output",
+      isError: false
+    });
 
     // 💾 SAVE HISTORY (If User is Logged In)
     const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -191,9 +196,9 @@ router.post("/run", async (req, res) => {
   } catch (error) {
     console.error("Piston API Error:", error.message);
     if (error.code === 'ECONNABORTED') {
-      return res.json({ output: "❌ Error: Request timed out. The code execution took too long." });
+      return res.json({ output: "❌ Error: Request timed out. The code execution took too long.", isError: true });
     }
-    res.json({ output: "❌ Error executing code via Piston API" });
+    res.json({ output: "❌ Error executing code via Piston API", isError: true });
   }
 });
 

@@ -10,6 +10,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  username: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null/undefined to not conflict
+  },
   firebaseUid: {
     type: String,
     required: false, // Changed to allow manual collection registration
@@ -40,6 +45,20 @@ const userSchema = new mongoose.Schema({
   isBlocked: {
     type: Boolean,
     default: false
+  },
+  subscriptionPlan: {
+    type: String,
+    enum: ["free", "pro", "enterprise"],
+    default: "free"
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ["active", "inactive", "cancelled"],
+    default: "active"
+  },
+  githubSyncUsage: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 
