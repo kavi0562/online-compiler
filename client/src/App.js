@@ -8,9 +8,13 @@ import Login from "./pages/Login";
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import HistoryPage from "./pages/HistoryPage";
+import Syllabus from "./pages/Syllabus";
+import PricingPage from "./pages/PricingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import BottomNav from "./components/BottomNav";
 import ThinkingLoader from "./components/ThinkingLoader";
+import SharedCodePage from "./pages/SharedCodePage";
 
 // 1. SINGLE SOURCE OF TRUTH FOR ADMIN EMAIL
 const ADMIN_EMAIL = "n.kavishiksuryavarma@gmail.com";
@@ -60,6 +64,12 @@ function App() {
             setRole(determinedRole);
             localStorage.setItem("role", determinedRole);
             console.log("ROLE_CONFIRMED_BY_BACKEND:", determinedRole);
+
+            // ATTACH BACKEND DATA TO FIREBASE USER OBJECT
+            currentUser.subscriptionPlan = syncResult.user.subscriptionPlan || 'free';
+            currentUser.subscriptionStatus = syncResult.user.subscriptionStatus || 'active';
+            currentUser.githubSyncUsage = syncResult.user.githubSyncUsage || 0;
+            currentUser.mongoId = syncResult.user._id;
           }
         } catch (err) {
           console.error("SYNC_FAILED_USING_LOCAL_ROLE:", err);
@@ -264,11 +274,20 @@ function App() {
 
   return (
     <BrowserRouter>
-      {user && <Navbar user={user} onLogout={handleLogout} role={role} />}
+      {/* Navbar handles its own guest/user state, pass user/role explicitly if needed, 
+          but clearer to let it consume props or context. pass user={user} role={role} */}
+      <Navbar user={user} onLogout={handleLogout} role={role} />
 
       <Routes>
+        {/* PUBLIC ROOT: Compiler accessible to everyone */}
         <Route
           path="/"
+          element={<UserDashboard githubToken={githubToken} user={user} />}
+        />
+
+        {/* LOGIN PAGE: Only for guests. If logged in, go to home/dashboard */}
+        <Route
+          path="/login"
           element={
             !user ? (
               <Login
@@ -279,20 +298,20 @@ function App() {
                 onAccountLinking={handleAccountLinking}
                 loading={loadingAction}
               />
-            ) : role === 'admin' ? (
-              <Navigate to="/admin" replace />
             ) : (
-              <Navigate to="/user" replace />
+              <Navigate to="/" replace />
             )
           }
         />
 
+        {/* PROTECTED: User Dashboard (Explicit) - redirect to / if just viewing compiler, 
+            but if we want to enforce auth for specific dashboard features we can keep it. 
+            However, user requested "compiler accessible before login". 
+            Let's keep /user as a protected alias for now or just redirect to / */}
         <Route
           path="/user"
           element={
-            <ProtectedRoute roleRequired="user" currentRole={role}>
-              <UserDashboard githubToken={githubToken} />
-            </ProtectedRoute>
+            <Navigate to="/" replace />
           }
         />
 
@@ -306,6 +325,23 @@ function App() {
         />
 
         <Route
+          path="/syllabus"
+          element={
+            <ProtectedRoute roleRequired="user" currentRole={role}>
+              <Syllabus />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/pricing"
+          element={
+            // Access to pricing page is public, but upgrading requires login (handled in page)
+            <PricingPage />
+          }
+        />
+
+        <Route
           path="/admin"
           element={
             <ProtectedRoute roleRequired="admin" currentRole={role}>
@@ -313,7 +349,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* SHARED CODE ROUTE */}
+        <Route path="/s/:id" element={<SharedCodePage />} />
       </Routes>
+
+      {/* Mobile Bottom Navigation - Only show if logged in */}
+      {user && <BottomNav />}
+
     </BrowserRouter>
   );
 }

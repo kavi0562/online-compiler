@@ -21,6 +21,11 @@ function AdminDashboard() {
     ">> VERIFYING_ADMIN_CREDENTIALS...",
     ">> ACCESS_GRANTED: COMMANDER_MODE_ACTIVE."
   ]);
+  const [users, setUsers] = useState([]); // Store fetched users
+  const [view, setView] = useState("USERS"); // Toggle views: 'USERS' | 'TERMINAL'
+  const [loading, setLoading] = useState(false); // New Loading State
+  const [fetchError, setFetchError] = useState(null); // New Error State
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -38,6 +43,8 @@ function AdminDashboard() {
   // Fetch Users & Stats
   const fetchData = async () => {
     try {
+      setLoading(true);
+      setFetchError(null);
       setLogs(prev => [...prev, ">> INITIATING_DATA_REFRESH_PROTOCOL..."]);
 
       // 1. GET TOKEN
@@ -47,7 +54,9 @@ function AdminDashboard() {
       if (!token) {
         console.error('No token found in localStorage!');
         setLogs(prev => [...prev, ">> AUTH_ERROR: TOKEN_MISSING. REDIRECTING..."]);
-        return; // Stop here if no token
+        setFetchError("AUTH_TOKEN_MISSING: PLEASE_LOGIN");
+        setLoading(false);
+        return;
       }
 
       // 2. Fetch System Health (Port 5051)
@@ -77,6 +86,7 @@ function AdminDashboard() {
         console.log(">> FETCH_SUCCESS: Users Found:", res.data.length);
 
         // 4. Update State & Status
+        setUsers(res.data); // Save full list
         setStats(prev => ({
           ...prev,
           totalUsers: res.data.length,
@@ -89,13 +99,17 @@ function AdminDashboard() {
 
       } catch (userErr) {
         console.error("M2_USER_SYNC_FAILED:", userErr);
-        // Retry Hint or Manual Refresh is already available via UI Button calling fetchData()
         const status = userErr.response ? userErr.response.status : "NET_ERR";
-        setLogs(prev => [...prev, `>> DATA_ACCESS_DENIED (STATUS: ${status}): ${userErr.message}`]);
+        const errMsg = userErr.response?.data?.message || userErr.message;
+        setFetchError(`SYNC_FAILED: ${status} - ${errMsg}`);
+        setLogs(prev => [...prev, `>> DATA_ACCESS_DENIED (STATUS: ${status}): ${errMsg}`]);
       }
 
     } catch (criticalError) {
       console.error("CRITICAL_SYSTEM_FAILURE:", criticalError);
+      setFetchError("CRITICAL_SYSTEM_FAILURE");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -198,18 +212,122 @@ function AdminDashboard() {
       {/* MAIN CONTENT Area */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden z-10">
 
-        {/* TERMINAL WINDOW (Left - 2/3 width) */}
-        <div className="lg:col-span-2 bg-[#0a0a0a] border border-[#FFBF00]/30 rounded flex flex-col shadow-lg overflow-hidden relative">
-          <div className="bg-[#FFBF00]/10 p-2 border-b border-[#FFBF00]/20 flex items-center gap-2">
-            <Terminal size={14} />
-            <span className="text-xs font-bold tracking-widest">LIVE_SYSTEM_LOGS</span>
+        {/* MAIN DISPLAY AREA (Left - 2/3 width) */}
+        <div className="lg:col-span-2 bg-[#0a0a0a] border border-[#FFBF00]/30 rounded flex flex-col shadow-lg overflow-hidden relative min-h-[400px]">
+
+          {/* TABS HEADER */}
+          <div className="bg-[#FFBF00]/10 p-2 border-b border-[#FFBF00]/20 flex items-center gap-4">
+            <button
+              onClick={() => setView("USERS")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold tracking-widest transition-all ${view === 'USERS' ? 'bg-[#FFBF00] text-black shadow-[0_0_10px_rgba(255,191,0,0.4)]' : 'text-[#FFBF00]/60 hover:text-[#FFBF00] hover:bg-[#FFBF00]/5'}`}
+            >
+              <Users size={14} /> PERSONNEL_DATABASE
+            </button>
+            <button
+              onClick={() => setView("TERMINAL")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold tracking-widest transition-all ${view === 'TERMINAL' ? 'bg-[#FFBF00] text-black shadow-[0_0_10px_rgba(255,191,0,0.4)]' : 'text-[#FFBF00]/60 hover:text-[#FFBF00] hover:bg-[#FFBF00]/5'}`}
+            >
+              <Terminal size={14} /> SYSTEM_LOGS
+            </button>
           </div>
-          <div className="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-1 text-[#FFBF00]/80">
-            {logs.map((log, index) => (
-              <div key={index} className="break-all">{log}</div>
-            ))}
-            <div ref={logEndRef} />
-            <div className="animate-pulse">_</div>
+
+          {/* VIEW CONTENT */}
+          <div className="flex-1 overflow-hidden relative">
+
+            {/* VIEW: USERS TABLE */}
+            {view === "USERS" && (
+              <div className="h-full overflow-y-auto custom-scrollbar p-0">
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-[#0a0a0a] z-10 shadow-md">
+                    <tr className="text-[#FFBF00]/70 border-b border-[#FFBF00]/20 text-[10px] tracking-[0.2em] uppercase">
+                      <th className="p-4 font-normal">Identity</th>
+                      <th className="p-4 font-normal">Role</th>
+                      <th className="p-4 font-normal">Auth_Method</th>
+                      <th className="p-4 font-normal">Last_Active</th>
+                      <th className="p-4 font-normal text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-300 text-xs font-mono">
+                    {loading ? (
+                      <tr>
+                        <td colSpan="5" className="p-8 text-center text-[#FFBF00] animate-pulse italic">
+                          &gt;&gt; ESTABLISHING_UPLINK... // DOWNLOADING_ROSTER...
+                        </td>
+                      </tr>
+                    ) : fetchError ? (
+                      <tr>
+                        <td colSpan="5" className="p-8 text-center text-red-500 font-bold">
+                          &gt;&gt; UPLINK_FAILED: {fetchError} <br />
+                          <span className="text-xs font-normal opacity-70">CHECK_CONNECTION // RETRY_PROTOCOL</span>
+                        </td>
+                      </tr>
+                    ) : users.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="p-8 text-center text-gray-500 italic">
+                          &gt;&gt; NO_RECORDS_FOUND // DATABASE_EMPTY
+                        </td>
+                      </tr>
+                    ) : users.map((u) => (
+                      <tr key={u._id} className="border-b border-[#FFBF00]/10 hover:bg-[#FFBF00]/5 transition-colors group">
+                        {/* Identity */}
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-[#FFBF00]/10 border border-[#FFBF00]/20 flex items-center justify-center text-[#FFBF00] overflow-hidden">
+                              {u.profilePic ? (
+                                <img src={u.profilePic} alt="av" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="font-bold">{u.name?.charAt(0)}</span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-bold text-white group-hover:text-[#FFBF00] transition-colors">{u.name}</div>
+                              <div className="text-[10px] text-gray-500">{u.email}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Role */}
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${u.role === 'admin' ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-gray-700 text-gray-500'}`}>
+                            {u.role ? u.role.toUpperCase() : 'USER'}
+                          </span>
+                        </td>
+
+                        {/* Provider */}
+                        <td className="p-4 text-gray-500">
+                          {u.provider ? u.provider.toUpperCase() : 'UNKNOWN'}
+                        </td>
+
+                        {/* Last Login */}
+                        <td className="p-4 text-gray-500">
+                          {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'N/A'}
+                        </td>
+
+                        {/* Status (Blocked/Active) */}
+                        <td className="p-4 text-right">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border ${u.isBlocked ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-green-500/50 text-green-500 bg-green-500/10'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${u.isBlocked ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`}></div>
+                            {u.isBlocked ? 'RESTRICTED' : 'ACTIVE'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* VIEW: TERMINAL LOGS */}
+            {view === "TERMINAL" && (
+              <div className="h-full p-4 overflow-y-auto font-mono text-xs space-y-1 text-[#FFBF00]/80">
+                {logs.map((log, index) => (
+                  <div key={index} className="break-all">{log}</div>
+                ))}
+                <div ref={logEndRef} />
+                <div className="animate-pulse">_</div>
+              </div>
+            )}
+
           </div>
         </div>
 

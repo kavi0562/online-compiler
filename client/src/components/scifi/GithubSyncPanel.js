@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Github, UploadCloud, Wifi } from 'lucide-react';
 
-const GithubSyncPanel = ({ onUplink, isLinked = true }) => {
+const GithubSyncPanel = ({ onUplink, isLinked = true, subscriptionPlan = 'free', usageCount = 0 }) => {
     const [repo, setRepo] = useState('');
     const [message, setMessage] = useState('');
     const [isUplinking, setIsUplinking] = useState(false);
@@ -24,8 +24,13 @@ const GithubSyncPanel = ({ onUplink, isLinked = true }) => {
                         <Github size={16} className={isLinked ? 'text-neon-cyan' : 'text-gray-500'} />
                     </div>
                     <span className="text-[10px] font-bold tracking-widest text-neon-cyan">
-                        NEURAL_UPLINK // GITHUB_SYNC
+                        GITHUB SYNC
                     </span>
+                    {(subscriptionPlan === 'free') && (
+                        <span className={`ml-2 px-1.5 py-0.5 text-[8px] border rounded font-mono ${usageCount >= 3 ? 'bg-red-500/10 text-red-500 border-red-500/50' : 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/50'}`}>
+                            {usageCount >= 3 ? "TRIAL EXPIRED" : `TRIAL: ${usageCount}/3`}
+                        </span>
+                    )}
                 </div>
                 {isLinked ? (
                     <div className="flex items-center gap-1">
@@ -34,14 +39,28 @@ const GithubSyncPanel = ({ onUplink, isLinked = true }) => {
                     </div>
                 ) : (
                     <div className="flex items-center gap-1">
-                        <span className="text-[9px] text-yellow-500 font-mono">LINK_REQUIRED</span>
-                        <Wifi size={10} className="text-yellow-500 animate-pulse-slow opacity-50" />
+                        <span className="text-[9px] text-red-500 font-mono">DISCONNECTED</span>
+                        <Wifi size={10} className="text-red-500 opacity-50" />
                     </div>
                 )}
             </div>
 
-            {/* Inputs */}
-            <div className="flex flex-col gap-y-4 relative z-10 w-full">
+            {/* Content or Auth Overlay */}
+            {!isLinked ? (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#050510]/95 backdrop-blur-sm p-4 text-center">
+                    <Github size={32} className="text-gray-500 mb-2" />
+                    <h3 className="text-neon-cyan font-bold tracking-widest text-xs mb-1">AUTHENTICATION REQUIRED</h3>
+                    <p className="text-[9px] text-gray-400 font-mono mb-3">
+                        To utilize Neural Uplink (Sync), you must authenticate with valid GitHub Credentials.
+                    </p>
+                    <a href="/login" className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-[10px] font-bold text-white hover:bg-gray-700 hover:border-gray-500 transition-all">
+                        CONNECT GITHUB ACCOUNT
+                    </a>
+                </div>
+            ) : null}
+
+            {/* Inputs (Blurred or Disabled if not linked, but overlay covers them) */}
+            <div className={`flex flex-col gap-y-4 relative z-10 w-full ${!isLinked ? 'opacity-20 pointer-events-none' : ''}`}>
                 <div className="relative w-full">
                     <span className="absolute top-1.5 left-2 text-[9px] text-gray-500 font-mono">TARGET_REPO</span>
                     <input
@@ -67,10 +86,10 @@ const GithubSyncPanel = ({ onUplink, isLinked = true }) => {
             {/* Action Button */}
             <button
                 onClick={handleUplink}
-                disabled={isUplinking || !repo || !message}
-                className={`w-full py-2.5 rounded-lg font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all
-                    ${isUplinking
-                        ? 'bg-neon-cyan/20 text-neon-cyan cursor-wait'
+                disabled={isUplinking || !repo || !message || (subscriptionPlan === 'free' && usageCount >= 3) || !isLinked}
+                className={`w-full py-2.5 rounded-lg font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all z-10
+                    ${isUplinking || (subscriptionPlan === 'free' && usageCount >= 3) || !isLinked
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                         : 'bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/50 hover:border-neon-cyan text-neon-cyan hover:shadow-[0_0_15px_rgba(0,243,255,0.4)]'
                     }`}
             >

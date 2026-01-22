@@ -9,26 +9,35 @@ const router = express.Router();
  * REGISTER
  * POST /api/auth/register
  */
+// REGISTER
 router.post("/register", async (req, res) => {
   try {
-    // 2. Auth Logic Entry (LOUD)
     console.log("🚀 HIT_REGISTER_ROUTE_SUCCESSFULLY");
     console.log("DEBUG_DATA_RECEIVED:", req.body);
     const { name, username, email, password } = req.body;
 
-    // RELAXED VALIDATION: Only Require Email/Pass
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    // 1. Check for Duplicate Email
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ message: "User already exists (Email)" });
     }
 
+    // 2. Check for Duplicate Username (if provided)
+    if (username) {
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+    }
+
+    // 3. Hash Password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3. Admin Auto-Role Logic
+    // 4. Admin Auto-Role Logic
     let role = "user";
     if (email === "n.kavishiksuryavarma@gmail.com") {
       role = "admin";
@@ -37,25 +46,32 @@ router.post("/register", async (req, res) => {
 
     const user = await User.create({
       name: name || username || "Unknown User",
+      username: username || undefined, // Store or undefined (sparse)
       email,
       password: hashedPassword,
       role: role,
       isBlocked: false
     });
 
+    // 5. Success Response (201 Created)
     res.status(201).json({
+      success: true,
       message: "Registration Successful",
       user: {
         _id: user._id,
         email: user.email,
+        username: user.username,
         role: user.role
       }
     });
 
   } catch (err) {
-    // 3. Error Identification (LOUD)
-    console.error("🛑 DATABASE_OR_LOGIC_CRASH:", err.message);
-    console.error('🔥 FULL_STACK:', err.stack);
+    console.error("🛑 REGISTRATION_ERROR:", err.message);
+    // Handle Mongoose Duplicate Key Error (E11000) specifically if race condition occurs
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({ message: `${field} already exists` });
+    }
     res.status(500).json({ success: false, message: err.message });
   }
 });
