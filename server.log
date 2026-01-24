@@ -39,3 +39,166 @@ MONGO_URI = mongodb+srv://admin:Kavishik85@kavi.oys8d01.mongodb.net/compiler
 🔔 INCOMING_REQUEST: POST /api/share
 🔔 INCOMING_REQUEST: OPTIONS /api/share
 🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/payment/upgrade
+🔔 INCOMING_REQUEST: POST /api/payment/upgrade
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/share
+🔔 INCOMING_REQUEST: POST /api/share
+🔔 INCOMING_REQUEST: OPTIONS /api/users/sync
+🔔 INCOMING_REQUEST: POST /api/users/sync
+>> MERGING_ACCOUNT: Found existing user by email: n.kavishiksuryavarma@gmail.com
+DATABASE_SAVE_SUCCESS: n.kavishiksuryavarma@gmail.com | Role: admin
+🔔 INCOMING_REQUEST: GET /api/status
+🔔 INCOMING_REQUEST: GET /api/status
+🔔 INCOMING_REQUEST: OPTIONS /api/admin/users
+🔔 INCOMING_REQUEST: OPTIONS /api/admin/users
+🔔 INCOMING_REQUEST: GET /api/admin/users
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: n.kavishiksuryavarma@gmail.com
+>> 🛡️ HARDCODED_ADMIN_DETECTED_IN_MIDDLEWARE
+>> ADMIN_CHECK: User=n.kavishiksuryavarma@gmail.com, Role=admin
+Fetching users for Admin...
+🔔 INCOMING_REQUEST: GET /api/admin/users
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: n.kavishiksuryavarma@gmail.com
+>> 🛡️ HARDCODED_ADMIN_DETECTED_IN_MIDDLEWARE
+>> ADMIN_CHECK: User=n.kavishiksuryavarma@gmail.com, Role=admin
+Fetching users for Admin...
+🔔 INCOMING_REQUEST: OPTIONS /api/ai/chat
+🔔 INCOMING_REQUEST: POST /api/ai/chat
+>> AI_REQUEST: [python] "adding two elements..."
+🔔 INCOMING_REQUEST: OPTIONS /api/compiler/execute
+🔔 INCOMING_REQUEST: POST /api/compiler/execute
+Failed to save history: invalid algorithm
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+🔔 INCOMING_REQUEST: OPTIONS /api/ai/chat
+🔔 INCOMING_REQUEST: POST /api/ai/chat
+>> AI_REQUEST: [python] "adding two elements..."
+🔔 INCOMING_REQUEST: OPTIONS /api/compiler/execute
+🔔 INCOMING_REQUEST: POST /api/compiler/execute
+Failed to save history: invalid algorithm
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/github/push
+🔔 INCOMING_REQUEST: POST /api/github/push
+--- MIDDLEWARE_CHECK (HYBRID) ---
+✅ FIREBASE_USER_VERIFIED: undefined
+🔔 GITHUB_PUSH_REQUEST_RECEIVED
+🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
+    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
+    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
+    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
+    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
+    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
+    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /Users/kavi/mern-project/server/routes/github.js:16:22
+🔔 INCOMING_REQUEST: OPTIONS /api/users/sync
+🔔 INCOMING_REQUEST: POST /api/users/sync
+>> CREATING_NEW_USER: DOEvUe8YKqP5pB3DAZOtG3kFiDE3@no-email.com
+DATABASE_SAVE_SUCCESS: DOEvUe8YKqP5pB3DAZOtG3kFiDE3@no-email.com | Role: user
+🔔 INCOMING_REQUEST: OPTIONS /api/ai/chat
+🔔 INCOMING_REQUEST: POST /api/ai/chat
+>> AI_REQUEST: [python] "cewcw..."
+{"timestamp":"2026-01-24T04:38:54.973Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":3.008,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-24T04:39:12.841Z","level":"SECURITY","action":"BLOCKED_KEYWORD","language":"python","pattern":"/import\\s+os/","ip":"::1"}
+{"timestamp":"2026-01-24T04:40:36.803Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.302,"isError":false,"ip":"::1"}

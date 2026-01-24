@@ -2,8 +2,8 @@ const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
 
 module.exports = async (req, res, next) => {
-  console.log('--- MIDDLEWARE_CHECK (HYBRID) ---');
   const authHeader = req.headers.authorization;
+  // console.log('--- MIDDLEWARE_CHECK --- Header:', authHeader ? "PRESENT" : "MISSING");
 
   // 1. Flexible Token Extraction
   let token;
@@ -13,47 +13,48 @@ module.exports = async (req, res, next) => {
     token = authHeader;
   }
 
-  // console.log('Token Exists:', !!token);
-
   if (!token) {
+    console.warn(">> AUTH_FAIL: No token provided");
     return res.status(401).json({ message: "No token provided" });
   }
 
   // 2. HYBRID VERIFICATION: Firebase First, then Custom JWT
   try {
     // Attempt A: Firebase ID Token
-    // console.log(">> Attempting Firebase Verification...");
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log('✅ FIREBASE_USER_VERIFIED:', decodedToken.email);
-    // console.log(">> Firebase Auth Success:", decodedToken.email);
+    // console.log('✅ FIREBASE_VERIFIED:', decodedToken.email);
 
     // Normalize user object
-    const isAdmin = decodedToken.email === "n.kavishiksuryavarma@gmail.com";
+    const adminEmailLower = "n.kavishiksuryavarma@gmail.com";
+    const userEmailLower = (decodedToken.email || "").toLowerCase();
+
+    // Check match case-insensitively
+    const isAdmin = userEmailLower === adminEmailLower;
+
+    console.log(`>> VERIFY_ID_TOKEN: Email=[${decodedToken.email}] | AdminCheck=[${isAdmin}]`);
+
     req.user = {
       id: decodedToken.uid, // Firebase UID
       email: decodedToken.email,
       role: decodedToken.admin || isAdmin ? 'admin' : 'user', // Force Admin if verified email matches
       provider: 'firebase'
     };
-    if (isAdmin) console.log(">> 🛡️ HARDCODED_ADMIN_DETECTED_IN_MIDDLEWARE");
+    if (isAdmin) console.log(">> 🛡️ FIREBASE_TOKEN: ADMIN_DETECTED");
     return next();
 
   } catch (firebaseError) {
-    // console.log(">> Firebase Verification Failed:", firebaseError.code);
-
-    // Attempt B: Custom JWT (For Admin Bypass / Manual Login)
+    // Attempt B: Custom JWT
     try {
-      // console.log(">> Attempting Custom JWT Verification...");
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'SURYA_SECRET_123');
-      // console.log(">> Custom JWT Success for:", decoded.id);
+      // console.log(">> CUSTOM_JWT_VERIFIED:", decoded.id);
 
       req.user = decoded;
       return next();
 
     } catch (jwtError) {
-      console.error("❌ ALL_AUTH_FAILED: Invalid Token (Algorithm/Signature)");
+      console.error("❌ TOKEN_VERIFICATION_FAILED | Firebase:", firebaseError.code, "| JWT:", jwtError.message);
       return res.status(401).json({
-        message: 'Authorization failed: Invalid token format or signature',
+        message: 'Authorization failed',
         error: jwtError.message
       });
     }

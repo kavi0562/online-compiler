@@ -129,7 +129,7 @@ const PricingPage = () => {
                     {/* PRO TIER */}
                     <PlanCard
                         title="PRO"
-                        price="₹299"
+                        price="₹349"
                         color="neon-cyan"
                         icon={Zap}
                         planId="pro"
@@ -146,7 +146,7 @@ const PricingPage = () => {
                     {/* ENTERPRISE TIER */}
                     <PlanCard
                         title="SYNDICATE"
-                        price="₹1499"
+                        price="₹999"
                         color="neon-magenta"
                         icon={Star}
                         planId="enterprise"

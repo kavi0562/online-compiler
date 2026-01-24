@@ -2,7 +2,56 @@ const express = require("express");
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const CodeHistory = require("../models/CodeHistory");
+const { executeDocker } = require("../utils/dockerSandbox");
+const { logEvent, isBlocked } = require("../utils/securityLogger");
 const router = express.Router();
+
+// --- SECURITY PROTOCOLS ---
+const DANGEROUS_PATTERNS = {
+  python: [/import\s+os/, /import\s+subprocess/, /open\(/, /exec\(/, /eval\(/, /__import__/, /sys\.modules/],
+  javascript: [/require\(/, /process\./, /child_process/, /fs\./, /eval\(/, /Function\(/],
+  cpp: [/system\(/, /fork\(/, /popen\(/, /<unistd\.h>/, /<windows\.h>/],
+  c: [/system\(/, /fork\(/, /popen\(/, /<unistd\.h>/, /<windows\.h>/],
+  java: [/Runtime\.getRuntime/, /ProcessBuilder/, /System\.exit/, /java\.io\.File/, /java\.nio/],
+  bash: [/rm\s+-rf/, /:[:]\s*{/, /mkfs/, /dd\s+if=/] // fork bombs & destruction
+};
+
+const SECURITY_STATS = {
+  MAX_CODE_LENGTH: 10000,
+  MAX_INPUT_LENGTH: 1000,
+};
+
+const validateSubmission = (language, code, input) => {
+  // 1. Basic Size Validation
+  if (!code || code.length > SECURITY_STATS.MAX_CODE_LENGTH) {
+    return { valid: false, error: "Security Alert: Code exceeds maximum length of 10,000 characters." };
+  }
+  if (input && input.length > SECURITY_STATS.MAX_INPUT_LENGTH) {
+    return { valid: false, error: "Security Alert: Input exceeds maximum length of 1,000 characters." };
+  }
+
+  // 2. Keyword Detection (Heuristic)
+  const langPatterns = DANGEROUS_PATTERNS[language.toLowerCase()];
+  if (langPatterns) {
+    for (const pattern of langPatterns) {
+      if (pattern.test(code)) {
+        logEvent('security', {
+          action: 'BLOCKED_KEYWORD',
+          language,
+          pattern: pattern.toString(),
+          ip: input?.ip || 'unknown'
+        });
+        return {
+          valid: false,
+          error: "Security Alert: Forbidden keyword or dangerous pattern detected. Action Logged."
+        };
+      }
+    }
+  }
+
+  return { valid: true };
+};
+// --------------------------
 
 const PISTON_API_URL = "https://emkc.org/api/v2/piston/execute";
 
@@ -94,6 +143,68 @@ const LANGUAGE_MAP = {
   zig: { language: "zig", version: "0.10.1" }
 };
 
+// GET /history - Fetch execution logs
+router.get("/history", async (req, res) => {
+  console.log("🔔 GET /history HIT");
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) {
+      return res.status(401).json({ error: "Invalid Token" });
+    }
+
+    const history = await CodeHistory.find({ userId: decoded.id })
+      .sort({ timestamp: -1 })
+      .limit(50);
+
+    const formattedHistory = history.map(log => ({
+      id: log._id,
+      language: log.language,
+      code: log.code,
+      status: (log.output && (log.output.includes("Error") || log.output.includes("Exception"))) ? 'fail' : 'success',
+      timestamp: new Date(log.timestamp).toLocaleTimeString('en-US', { hour12: false }),
+      duration: "0.00"
+    }));
+
+    res.json(formattedHistory);
+
+  } catch (err) {
+    console.error("FETCH_HISTORY_ERROR:", err);
+    res.status(500).json({ error: "Failed to fetch history" });
+  }
+});
+
+// DELETE /history/:id - Delete execution log
+router.delete("/history/:id", async (req, res) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) return res.status(401).json({ error: "Invalid Token" });
+
+    // Use _id for MongoDB compatibility, but also check userId for ownership security
+    const result = await CodeHistory.findOneAndDelete({
+      _id: req.params.id,
+      userId: decoded.id
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: "Log not found or unauthorized" });
+    }
+
+    res.json({ success: true, message: "Log deleted permanently" });
+
+  } catch (err) {
+    console.error("DELETE_HISTORY_ERROR:", err);
+    res.status(500).json({ error: "Failed to delete log" });
+  }
+});
+
 router.get("/languages", (req, res) => {
   res.json(Object.keys(LANGUAGE_MAP).map(key => ({
     key,
@@ -126,6 +237,23 @@ const getFileName = (language) => {
 router.post("/execute", async (req, res) => {
   // Logic remains the same, just renamed endpoint to match frontend
   const { code, language, input } = req.body;
+  const clientIp = req.ip || req.connection.remoteAddress;
+
+  // 0. CHECK WATCHLIST
+  if (isBlocked(clientIp)) {
+    logEvent('security', { action: 'BLOCKED_IP_ATTEMPT', ip: clientIp });
+    return res.status(403).json({ output: "⛔ ACCESS DENIED: Your IP has been flagged for repeated security violations.", isError: true });
+  }
+
+  // 1. SECURITY CHECK (Pre-Execution)
+  // We pass a dummy object with IP to validation for logging context if needed, though mostly handled here
+  const securityCheck = validateSubmission(language, code, { ip: clientIp });
+  if (!securityCheck.valid) {
+    return res.json({
+      output: `❌ ${securityCheck.error}`,
+      isError: true
+    });
+  }
 
   if (!code || !language) {
     return res.json({ output: "❌ Code or language missing" });
@@ -137,41 +265,24 @@ router.post("/execute", async (req, res) => {
   }
 
   try {
-    const response = await axios.post(PISTON_API_URL, {
-      language: langConfig.language,
-      version: langConfig.version,
-      files: [{
-        name: getFileName(langConfig.language),
-        content: code
-      }],
-      stdin: input || "",
-      run_timeout: 3000,
-      compile_timeout: 10000
-    }, {
-      timeout: 15000
+    // SWITCH: Use Local Docker Sandbox instead of Piston
+    // const response = await axios.post(PISTON_API_URL, ...); 
+
+    // Execute via Docker
+    const result = await executeDocker(language, code, input || "");
+
+    // LOG SUCCESS/FAIL
+    logEvent('info', {
+      action: 'EXECUTION_COMPLETE',
+      language,
+      duration: result.duration,
+      isError: result.isError,
+      ip: clientIp
     });
 
-    const { run, compile } = response.data;
-
-    // Check if there was a compile error first
-    if (compile && compile.code !== 0) {
-      return res.json({
-        output: `❌ Compilation Error:\n${compile.stderr || compile.stdout || "Unknown error"}`,
-        isError: true
-      });
-    }
-
-    // Combine stdout and stderr
-    let output = (run.stdout || "") + (run.stderr || "");
-
-    // Check for Piston signal (e.g., SIGTERM, SIGKILL which indicate timeout)
-    if (run.signal === "SIGKILL" || run.signal === "SIGTERM") {
-      output = `⚠️ Time Limit Exceeded\nYour code took too long to execute. Infinite loop handled.`;
-    }
-
     res.json({
-      output: output || "⚠️ No output",
-      isError: false
+      output: result.output || "⚠️ No output",
+      isError: result.isError
     });
 
     // 💾 SAVE HISTORY (If User is Logged In)
@@ -181,25 +292,25 @@ router.post("/execute", async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (decoded) {
           await CodeHistory.create({
-            userId: decoded.id, // Assuming payload has 'id'
+            userId: decoded.id,
             language,
             code,
-            output: output || "⚠️ No output"
+            output: result.output || "⚠️ No output"
           });
         }
       } catch (err) {
         console.error("Failed to save history:", err.message);
-        // Do not fail the request if history saving fails
       }
     }
 
   } catch (error) {
-    console.error("Piston API Error:", error.message);
-    if (error.code === 'ECONNABORTED') {
-      return res.json({ output: "❌ Error: Request timed out. The code execution took too long.", isError: true });
-    }
-    res.json({ output: "❌ Error executing code via Piston API", isError: true });
+    console.error("Execution Error:", error.message);
+    res.json({ output: "❌ Critical Execution Failure", isError: true });
   }
 });
+
+
+
+
 
 module.exports = router;

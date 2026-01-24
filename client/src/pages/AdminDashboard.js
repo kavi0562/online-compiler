@@ -77,6 +77,19 @@ function AdminDashboard() {
 
         console.log('Sending Token:', cleanToken ? 'YES' : 'NO');
 
+        // DEBUG: Decode token to see what we are sending
+        try {
+          const base64Url = cleanToken.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const decoded = JSON.parse(jsonPayload);
+          console.log(">> DEBUG_TOKEN_PAYLOAD:", decoded);
+        } catch (e) {
+          console.error(">> TOKEN_DECODE_ERROR:", e);
+        }
+
         const res = await axios.get("http://localhost:5051/api/admin/users", {
           headers: {
             Authorization: `Bearer ${cleanToken}`
@@ -101,6 +114,10 @@ function AdminDashboard() {
         console.error("M2_USER_SYNC_FAILED:", userErr);
         const status = userErr.response ? userErr.response.status : "NET_ERR";
         const errMsg = userErr.response?.data?.message || userErr.message;
+        const fullDetails = userErr.response?.data ? JSON.stringify(userErr.response.data) : "No Details";
+
+        console.error(`>> API_ERROR_DETAILS: Status [${status}] | Message [${errMsg}] | Full:`, fullDetails);
+
         setFetchError(`SYNC_FAILED: ${status} - ${errMsg}`);
         setLogs(prev => [...prev, `>> DATA_ACCESS_DENIED (STATUS: ${status}): ${errMsg}`]);
       }

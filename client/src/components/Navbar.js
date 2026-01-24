@@ -51,7 +51,8 @@ function Navbar({ user, role, onLogout }) {
           {user && [
             { name: 'DASHBOARD', path: '/', icon: <LayoutDashboard size={16} /> },
             { name: 'SYLLABUS', path: '/syllabus', icon: <BookOpen size={16} /> },
-            { name: 'PRICING', path: '/pricing', icon: <CreditCard size={16} /> }
+            // Only show Pricing for non-admins
+            ...(!isAdmin ? [{ name: 'PRICING', path: '/pricing', icon: <CreditCard size={16} /> }] : [])
           ].map((link) => (
             <NavLink
               key={link.name}

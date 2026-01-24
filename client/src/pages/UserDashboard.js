@@ -1,7 +1,7 @@
 import UserDashboardComponent from "../components/UserDashboard";
 
-function UserDashboard() {
-  return <UserDashboardComponent />;
+function UserDashboard(props) {
+  return <UserDashboardComponent {...props} />;
 }
 
 export default UserDashboard;
