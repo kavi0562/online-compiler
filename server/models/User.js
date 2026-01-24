@@ -59,6 +59,10 @@ const userSchema = new mongoose.Schema({
   githubSyncUsage: {
     type: Number,
     default: 0
+  },
+  githubAccessToken: {
+    type: String,
+    select: false // Do not return by default for security, only when explicitly asked or needed
   }
 }, { timestamps: true });
 

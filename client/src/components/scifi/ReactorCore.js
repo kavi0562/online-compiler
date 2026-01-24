@@ -4,12 +4,17 @@ import { Hexagon, Maximize2, Minimize2 } from 'lucide-react';
 
 const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHover, isMaximized, onToggleMaximize }) => {
     const editorRef = useRef(null);
+    const containerRef = useRef(null);
 
     const handleEditorDidMount = (editor, monaco) => {
         editorRef.current = editor;
+        // Force layout check on mount to prevent blank editor
+        setTimeout(() => {
+            if (editor) editor.layout();
+        }, 100);
     };
 
-    // Manual Layout Trigger on Resize/Maximize
+    // Robust Layout Trigger using ResizeObserver
     useEffect(() => {
         const handleResize = () => {
             if (editorRef.current) {
@@ -17,17 +22,26 @@ const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHo
             }
         };
 
-        // Add listener
+        // Window resize fallback
         window.addEventListener('resize', handleResize);
 
+        // Container Resize Observer
+        let resizeObserver = null;
+        if (containerRef.current) {
+            resizeObserver = new ResizeObserver(() => {
+                handleResize();
+            });
+            resizeObserver.observe(containerRef.current);
+        }
+
         // Trigger layout update when maximized state changes
-        // Use a small timeout to wait for CSS transitions if any
         const timer = setTimeout(() => {
             handleResize();
         }, 50);
 
         return () => {
             window.removeEventListener('resize', handleResize);
+            if (resizeObserver) resizeObserver.disconnect();
             clearTimeout(timer);
         };
     }, [isMaximized]);
@@ -48,8 +62,8 @@ const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHo
             )}
 
             {/* Inner Core (Editor) */}
-            <div className={`relative w-full z-10 flex flex-col overflow-hidden bg-[#050510] border border-[#30363d]
-                ${isMaximized ? 'h-screen fixed inset-0 z-[999999] rounded-none' : 'h-full rounded-2xl'}`}>
+            <div ref={containerRef} className={`relative w-full z-10 flex flex-col overflow-hidden bg-[#050510] border border-[#30363d]
+                ${isMaximized ? 'fixed top-20 md:top-24 bottom-0 left-0 right-0 z-[60] rounded-none border-t border-neon-cyan/20 shadow-2xl' : 'h-full rounded-2xl'}`}>
 
                 {/* Header for Core */}
                 <div className="flex items-center justify-between px-4 py-2 bg-[#0a0a1a] border-b border-[#30363d]">

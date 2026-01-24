@@ -38,6 +38,10 @@ app.get('/test', (req, res) => {
   res.send('Server is Talking!');
 });
 
+app.get('/test-refresh', (req, res) => {
+  res.send('REFRESH_CONFIRMED');
+});
+
 /* =======================
    MIDDLEWARES
 ======================= */
@@ -55,16 +59,20 @@ app.use(cors({
 // MIDDLEWARE ORDER: Body Parsers FIRST
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(helmet());
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "unsafe-none" }, // Relaxed for Google Auth & Dev
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Disable CSP for now if it conflicts
+}));
 
 /* =======================
    RATE LIMITING
 ======================= */
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 1000, // 1 second
+  max: 5,         // Max 5 requests per second per IP
   message: {
-    message: "Too many requests. Please try again later."
+    message: "Too many requests. Please slow down."
   }
 });
 app.use(globalLimiter);
@@ -116,8 +124,13 @@ mongoose
 
 // 🚨 GLOBAL ERROR HANDLER
 app.use((err, req, res, next) => {
-  console.error('🔥 GLOBAL_CRASH:', err.stack);
-  res.status(500).send('Something broke!');
+  console.error('🔥 GLOBAL_CRASH:', err.stack); // Log full stack internally
+
+  // Generic safe response to user
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: "An unexpected error occurred. Administrators have been notified."
+  });
 });
 
 /* =======================

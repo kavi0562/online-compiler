@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
 import { Github, UploadCloud, Wifi } from 'lucide-react';
 
-const GithubSyncPanel = ({ onUplink, isLinked = true, subscriptionPlan = 'free', usageCount = 0 }) => {
-    const [repo, setRepo] = useState('');
+const GithubSyncPanel = ({
+    onUplink,
+    isLinked = true,
+    subscriptionPlan = 'free',
+    usageCount = 0,
+    onConnectGithub,
+    userRole,
+    repo,
+    onRepoChange,
+    isAutoPushEnabled,
+    onToggleAutoPush
+}) => {
     const [message, setMessage] = useState('');
     const [isUplinking, setIsUplinking] = useState(false);
+
+    const isAdmin = userRole === 'admin';
+    const isTrialExpired = subscriptionPlan === 'free' && usageCount >= 3;
+    const isDisabled = isUplinking || (!isAdmin && isTrialExpired) || !isLinked;
 
     const handleUplink = async () => {
         if (!repo || !message) return;
@@ -26,9 +40,14 @@ const GithubSyncPanel = ({ onUplink, isLinked = true, subscriptionPlan = 'free',
                     <span className="text-[10px] font-bold tracking-widest text-neon-cyan">
                         GITHUB SYNC
                     </span>
-                    {(subscriptionPlan === 'free') && (
+                    {!isAdmin && (subscriptionPlan === 'free') && (
                         <span className={`ml-2 px-1.5 py-0.5 text-[8px] border rounded font-mono ${usageCount >= 3 ? 'bg-red-500/10 text-red-500 border-red-500/50' : 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/50'}`}>
                             {usageCount >= 3 ? "TRIAL EXPIRED" : `TRIAL: ${usageCount}/3`}
+                        </span>
+                    )}
+                    {isAdmin && (
+                        <span className="ml-2 px-1.5 py-0.5 text-[8px] border rounded font-mono bg-neon-magenta/10 text-neon-magenta border-neon-magenta/50">
+                            ADMIN_UNLIMITED
                         </span>
                     )}
                 </div>
@@ -53,9 +72,9 @@ const GithubSyncPanel = ({ onUplink, isLinked = true, subscriptionPlan = 'free',
                     <p className="text-[9px] text-gray-400 font-mono mb-3">
                         To utilize Neural Uplink (Sync), you must authenticate with valid GitHub Credentials.
                     </p>
-                    <a href="/login" className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-[10px] font-bold text-white hover:bg-gray-700 hover:border-gray-500 transition-all">
+                    <button onClick={onConnectGithub} className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-[10px] font-bold text-white hover:bg-gray-700 hover:border-gray-500 transition-all cursor-pointer">
                         CONNECT GITHUB ACCOUNT
-                    </a>
+                    </button>
                 </div>
             ) : null}
 
@@ -66,7 +85,7 @@ const GithubSyncPanel = ({ onUplink, isLinked = true, subscriptionPlan = 'free',
                     <input
                         type="text"
                         value={repo}
-                        onChange={(e) => setRepo(e.target.value)}
+                        onChange={(e) => onRepoChange(e.target.value)}
                         className="w-full bg-[#050510]/60 border border-[#30363d] rounded-lg pt-5 pb-1.5 px-2 text-xs font-mono text-white placeholder-gray-700 focus:border-neon-cyan focus:outline-none transition-colors"
                         placeholder="username/repo-name"
                     />
@@ -81,14 +100,29 @@ const GithubSyncPanel = ({ onUplink, isLinked = true, subscriptionPlan = 'free',
                         placeholder="Initial Commit..."
                     />
                 </div>
+
+                {/* Auto-Push Toggle */}
+                <div className="flex items-center justify-between bg-[#050510]/40 p-2 rounded-lg border border-[#30363d]">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-neon-cyan/80 font-bold tracking-wider">AUTO-PUSH ON RUN</span>
+                        <span className="text-[8px] text-gray-500">Syncs every execution</span>
+                    </div>
+
+                    <button
+                        onClick={() => onToggleAutoPush(!isAutoPushEnabled)}
+                        className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${isAutoPushEnabled ? 'bg-neon-cyan/20 border border-neon-cyan' : 'bg-gray-800 border border-gray-600'}`}
+                    >
+                        <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-300 ${isAutoPushEnabled ? 'left-[18px] bg-neon-cyan shadow-[0_0_8px_rgba(0,243,255,0.8)]' : 'left-0.5 bg-gray-500'}`}></div>
+                    </button>
+                </div>
             </div>
 
             {/* Action Button */}
             <button
                 onClick={handleUplink}
-                disabled={isUplinking || !repo || !message || (subscriptionPlan === 'free' && usageCount >= 3) || !isLinked}
+                disabled={isDisabled || !repo || !message}
                 className={`w-full py-2.5 rounded-lg font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all z-10
-                    ${isUplinking || (subscriptionPlan === 'free' && usageCount >= 3) || !isLinked
+                    ${isDisabled
                         ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                         : 'bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/50 hover:border-neon-cyan text-neon-cyan hover:shadow-[0_0_15px_rgba(0,243,255,0.4)]'
                     }`}

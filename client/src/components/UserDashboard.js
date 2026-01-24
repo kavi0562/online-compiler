@@ -20,9 +20,18 @@ const BOILERPLATES = {
   java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Systems Operational.");\n    }\n}',
   javascript: 'console.log("Reactor Core Online...");',
   cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Energy Levels Optimal." << std::endl;\n    return 0;\n}',
+  c: '#include <stdio.h>\n\nint main() {\n    printf("System Ignition...\\n");\n    return 0;\n}',
+  csharp: 'using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Neural Uplink Established.");\n    }\n}',
+  go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Gopher Online.")\n}',
+  rust: 'fn main() {\n    println!("Rust Safe-Mode Active.");\n}',
+  php: '<?php\necho "Hypertext Preprocessor Linked.";\n?>',
+  ruby: 'puts "Ruby Gem Loaded."',
+  swift: 'print("Swift Protocol Initiated.")',
+  typescript: 'console.log("Type-Safe Systems Online...");',
+  bash: 'echo "Shell Command Executed."',
 };
 
-function UserDashboard({ githubToken, user }) {
+function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   const [code, setCode] = useState(BOILERPLATES["python"] || "");
   const [language, setLanguage] = useState("python");
   const [languages] = useState(LANGUAGES);
@@ -41,9 +50,29 @@ function UserDashboard({ githubToken, user }) {
   const [localUsageCount, setLocalUsageCount] = useState(user?.githubSyncUsage || 0);
   const [isEditorMaximized, setIsEditorMaximized] = useState(false);
 
+  // Auto-Push State
+  const [repo, setRepo] = useState("");
+  const [isAutoPushEnabled, setIsAutoPushEnabled] = useState(false);
+
   useEffect(() => {
     if (user) {
       setLocalUsageCount(user.githubSyncUsage || 0);
+
+      // Fetch History
+      axios.get("http://localhost:5051/api/compiler/history", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      })
+        .then(res => {
+          if (res.data) {
+            setHistory(res.data);
+          }
+        })
+        .catch(err => {
+          console.error("HISTORY_DESC_FAILED:", err);
+          if (err.response) {
+            console.error("HISTORY_ERR_RESPONSE:", err.response.status, err.response.data);
+          }
+        });
     }
   }, [user]);
 
@@ -95,7 +124,15 @@ function UserDashboard({ githubToken, user }) {
 
   const handleLanguageChange = (newLang) => {
     setLanguage(newLang);
-    setCode(BOILERPLATES[newLang] || `// Initialize ${newLang} module...`);
+
+    // Safer default fallback with correct comment syntax
+    let defaultCode = `// Initialize ${newLang} module...`;
+    const hashCommentLangs = ['python', 'python2', 'ruby', 'perl', 'bash', 'sh', 'r', 'julia', 'elixir', 'yaml', 'coffeescript', 'nim', 'crystal', 'dockerfile', 'makefile'];
+    if (hashCommentLangs.some(l => newLang.toLowerCase().includes(l))) {
+      defaultCode = `# Initialize ${newLang} module...`;
+    }
+
+    setCode(BOILERPLATES[newLang] || defaultCode);
     setIsError(false);
     setOutput("");
     setActiveLogId(null);
@@ -229,6 +266,41 @@ function UserDashboard({ githubToken, user }) {
       setActiveLogId(runId);
     } finally {
       setLoading(false);
+
+      // TRIGGER AUTO-PUSH (Background Process)
+      if (isAutoPushEnabled && repo && user) {
+        handleAutoPush(runId);
+      }
+    }
+  };
+
+  const handleAutoPush = async (runId) => {
+    try {
+      // console.log(">> AUTO_PUSH_INITIATED");
+      const filenameMap = {
+        'python': 'main.py',
+        'javascript': 'index.js',
+        'java': 'Main.java',
+        'cpp': 'main.cpp',
+        'c': 'main.c'
+      };
+
+      await axios.post("http://localhost:5051/api/github/auto-push-cli", {
+        repo: repo,
+        code: code,
+        filename: filenameMap[language] || 'code.txt',
+        githubToken: githubToken
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      });
+      // console.log(">> AUTO_PUSH_SUCCESS");
+      // Quietly increment usage count if not admin
+      setLocalUsageCount(prev => prev + 1);
+
+    } catch (err) {
+      console.error("AUTO_PUSH_FAILED:", err);
+      // Optional: Notify user via console output without blocking execution
+      setOutput(prev => prev + `\n\n// NOTE: Auto-Push Failed: ${err.response?.data?.error || err.message}`);
     }
   };
 
@@ -238,6 +310,18 @@ function UserDashboard({ githubToken, user }) {
     setIsError(false);
     setOutput(`// DATA RECOVERY SUCCESSFUL\n// RESTORED SNAPSHOT: ${log.timestamp}\n// STATUS: READY FOR ANALYSIS`);
     setActiveLogId(log.id);
+  };
+
+  const handleDeleteHistory = async (logId) => {
+    try {
+      await axios.delete(`http://localhost:5051/api/compiler/history/${logId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      });
+      setHistory(prev => prev.filter(log => log.id !== logId));
+      if (activeLogId === logId) setActiveLogId(null);
+    } catch (err) {
+      console.error("DELETE_HISTORY_ERROR:", err);
+    }
   };
 
   const clearHistory = () => {
@@ -280,6 +364,8 @@ function UserDashboard({ githubToken, user }) {
         code: code,
         filename: filename,
         githubToken: githubToken // Might be null, server will handle it
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
 
       if (res.data.success) {
@@ -294,9 +380,16 @@ function UserDashboard({ githubToken, user }) {
       console.error("UPLINK_ERROR_DETAILS:", err);
       let errorMsg = "CONNECTION_FAILED";
       if (err.response) {
+        console.error("SERVER_RESPONSE:", err.response.status, err.response.data);
         errorMsg = `SERVER_REJECTED: ${err.response.status}`;
         if (err.response.data && err.response.data.error) {
           errorMsg += `\n// REASON: ${err.response.data.error}`;
+        }
+        if (err.response.data && err.response.data.message) {
+          errorMsg += `\n// MSG: ${err.response.data.message}`;
+        }
+        if (typeof err.response.data === 'string') {
+          errorMsg += `\n// RAW: ${err.response.data.substring(0, 100)}`;
         }
       } else if (err.request) {
         errorMsg = "NO_RESPONSE_FROM_SERVER (Check invalid URL or Server Offline)";
@@ -502,7 +595,7 @@ function UserDashboard({ githubToken, user }) {
         </div>
 
         {/* MAIN REACTOR CORE (Center) */}
-        <div className="w-full h-[60vh] md:h-auto md:col-span-8 md:row-span-7 relative order-2 md:order-none">
+        <div className="w-full h-[60vh] md:h-full md:col-span-8 md:row-span-7 relative order-2 md:order-none">
           <div className="absolute inset-0 bg-glass/20 border border-neon-cyan/20 rounded-[30px] -z-10 blur-xl transition-all duration-500 hidden md:block"></div>
           <ReactorCore
             code={code}
@@ -522,40 +615,19 @@ function UserDashboard({ githubToken, user }) {
 
         {/* RIGHT SIDEBAR: Core AI + Temporal Logs (Desktop Only) - Protected in Guest Mode */}
         <div className="hidden md:flex col-span-4 row-span-7 flex-col gap-4">
-          {user ? (
-            <>
-              <GithubSyncPanel
-                onUplink={handleUplink}
-                isLinked={!!githubToken}
-                subscriptionPlan={user?.subscriptionPlan || 'free'}
-                usageCount={localUsageCount}
-              />
-              <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} activeLogId={activeLogId} />
-            </>
-          ) : (
-            <div className="h-full w-full bg-glass border border-glass rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 shadow-lg backdrop-blur-md relative overflow-hidden group">
-              {/* Guest Placeholder */}
-              <div className="absolute inset-0 bg-neon-cyan/5 -z-10 group-hover:bg-neon-cyan/10 transition-colors"></div>
-
-              <div className="p-4 bg-[#0a0a1a] rounded-full border border-neon-cyan/30 shadow-[0_0_20px_rgba(0,243,255,0.2)]">
-                <ReactorLogo className="w-10 h-10 text-neon-cyan" />
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="text-neon-cyan font-bold tracking-widest text-sm">GUEST MODE ACTIVE</h3>
-                <p className="text-[10px] text-gray-400 leading-relaxed font-mono">
-                  Advanced features like Cloud Sync, History Tracking, and Neural Uplink are disabled.
-                </p>
-              </div>
-
-              <a href="/login" className="px-6 py-2 bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan text-xs font-bold rounded-lg hover:bg-neon-cyan/20 hover:shadow-[0_0_15px_rgba(0,243,255,0.4)] transition-all">
-                AUTHENTICATE
-              </a>
-
-              {/* Decorative scanline */}
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-neon-cyan/30 animate-scanline"></div>
-            </div>
-          )}
+          <GithubSyncPanel
+            onUplink={handleUplink}
+            onConnectGithub={onConnectGithub}
+            isLinked={!!githubToken}
+            subscriptionPlan={user?.subscriptionPlan || 'free'}
+            usageCount={localUsageCount}
+            userRole={role} // Use the explicit role prop
+            repo={repo}
+            onRepoChange={setRepo}
+            isAutoPushEnabled={isAutoPushEnabled}
+            onToggleAutoPush={setIsAutoPushEnabled}
+          />
+          <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} onDelete={handleDeleteHistory} activeLogId={activeLogId} />
         </div>
 
         {/* HOLO TERMINAL (Bottom) */}

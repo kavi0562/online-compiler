@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signInWithPopup, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, EmailAuthProvider, linkWithCredential, linkWithPopup } from "firebase/auth";
 import { auth, googleProvider, githubProvider } from "./firebase";
 import { GithubAuthProvider } from "firebase/auth";
 import axios from "axios";
@@ -77,9 +77,11 @@ function App() {
 
         // 3. Set State
         setUser(currentUser);
-        if (currentUser.accessToken) {
-          localStorage.setItem("token", currentUser.accessToken);
-        }
+        // CRITICAL FIX: Do NOT overwrite the token here with currentUser.accessToken.
+        // We want the token from syncUserWithBackend (Custom JWT) which contains the correct role/permissions.
+        // if (currentUser.accessToken) {
+        //   localStorage.setItem("token", currentUser.accessToken);
+        // }
 
       } else {
         // Logout / No Session
@@ -95,24 +97,106 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // --- Redirect Result Handling (New) ---
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = null; // await getRedirectResult(auth);
+
+        if (!result) return; // No redirect result, normal page load
+
+        const user = result.user;
+        console.log('Redirect Login Success:', user.email);
+
+        // 1. Sync User with Backend
+        console.log(">> SYNCING_WITH_BACKEND...");
+        const syncData = await syncUserWithBackend(user);
+
+        if (syncData && syncData.token) {
+          console.log(">> BACKEND_TOKEN_RECEIVED");
+          localStorage.setItem('token', syncData.token);
+        }
+
+        localStorage.setItem('email', user.email);
+
+        // 2. Admin Check
+        const isAdmin = user.email === ADMIN_EMAIL;
+
+        if (isAdmin) {
+          if (localStorage.getItem("role") === 'user') {
+            localStorage.removeItem("role");
+          }
+          setRole('admin');
+          setUser(user);
+          localStorage.setItem("role", "admin");
+
+          // Optional: Force reload or redirect if needed
+          // window.location.href = "/admin"; 
+        }
+
+        // 3. GitHub Token Handling
+        // Only if the *provider* of the result was GitHub
+        const credential = GithubAuthProvider.credentialFromResult(result);
+        if (credential && credential.accessToken) {
+          setGithubToken(credential.accessToken);
+          localStorage.setItem("github_token", credential.accessToken);
+        }
+
+      } catch (error) {
+        console.error("REDIRECT_RESULT_ERROR:", error);
+      }
+    };
+
+    handleRedirectResult();
+  }, []);
+
   const syncUserWithBackend = async (firebaseUser) => {
     try {
-      if (!firebaseUser.email) return null;
+      // ROBUST EMAIL HANDLING
+      let email = firebaseUser.email;
+      if (!email && firebaseUser.providerData && firebaseUser.providerData.length > 0) {
+        email = firebaseUser.providerData[0].email;
+        console.log(">> RECOVERED_EMAIL_FROM_PROVIDER_DATA:", email);
+      }
+      // Last resort fallback to allow sync to proceed (prevents 401)
+      if (!email) {
+        console.warn(">> WARNING: NO_EMAIL_FROM_PROVIDER. USING PLACEHOLDER.");
+        email = `${firebaseUser.uid}@no-email.com`;
+      }
 
       const providerId = firebaseUser.providerData.length > 0
         ? firebaseUser.providerData[0].providerId
         : 'password';
 
+      // CHECK FOR PENDING TOKEN (Soft Link Flow)
+      const pendingToken = localStorage.getItem("pending_github_token");
+      const activeToken = firebaseUser.githubAccessToken || localStorage.getItem("github_token") || pendingToken;
+
       const response = await axios.post("http://localhost:5051/api/users/sync", {
         uid: firebaseUser.uid,
-        name: firebaseUser.displayName || firebaseUser.email.split("@")[0],
-        email: firebaseUser.email,
+        name: firebaseUser.displayName || email.split("@")[0],
+        email: email,
         photoURL: firebaseUser.photoURL || "",
-        provider: providerId
+        provider: providerId,
+        githubAccessToken: activeToken
       });
+
+      // Cleanup pending token if used
+      if (pendingToken) {
+        localStorage.removeItem("pending_github_token");
+        localStorage.setItem("github_token", pendingToken); // Promote to permanent
+      }
 
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
+      }
+
+      // PERSISTENT GITHUB TOKEN RESTORATION
+      const serverUser = response.data.user;
+      if (serverUser && serverUser.githubAccessToken) {
+        console.log(">> RESTORED_GITHUB_TOKEN_FROM_DB");
+        setGithubToken(serverUser.githubAccessToken);
+        localStorage.setItem("github_token", serverUser.githubAccessToken);
       }
 
       return response.data; // Return full data including role
@@ -166,7 +250,11 @@ function App() {
     setLoadingAction(true);
     try {
       // 1. Ask user to sign in with Google first to prove ownership
-      const result = await signInWithPopup(auth, googleProvider);
+      // NOTE: linkWithPopup is also prone to COOP errors. 
+      // For now we will keep popup for linking as redirect linking is complex (session persistence).
+      // If this fails, we might need to refactor this too.
+      // But verifyIdToken might be enough?
+      const result = await signInWithPopup(auth, googleProvider); // Keeping Popup for linking/re-auth flow specifically.
       const user = result.user;
 
       // 2. Create credentials for the manual account they wanted
@@ -193,65 +281,77 @@ function App() {
     try {
       const provider = providerType === 'github' ? githubProvider : googleProvider;
 
-      // Explicitly ensuring parameters again just in case
       if (providerType !== 'github') {
         provider.setCustomParameters({ prompt: 'select_account' });
       }
 
-      const result = await signInWithPopup(auth, provider);
+      // SMART AUTH HANDLER: Link if logged in, Sign In if not
+      let result;
+      if (auth.currentUser && providerType === 'github') {
+        console.log(">> LINKING_MODE: Attaching GitHub to existing session...");
+        result = await linkWithPopup(auth.currentUser, provider);
+        console.log(">> LINKING_SUCCESS: GitHub attached.");
+      } else {
+        result = await signInWithPopup(auth, provider);
+      }
+
       const user = result.user;
 
-      console.log('User Email from Google:', user.email);
+      console.log('User Email from Provider:', user.email);
 
-      if (!user.email) {
-        console.error(">> AUTH_DATA_MISSING: EMAIL_NOT_FOUND");
-        return;
-      }
-
-      // 1. Sync User with Backend IMMEDIATELY to get the TOKEN
-      // We must do this BEFORE redirecting, or the dashboard will be 401
-      console.log(">> SYNCING_WITH_BACKEND...");
-      const syncData = await syncUserWithBackend(user);
-
-      if (syncData && syncData.token) {
-        console.log(">> BACKEND_TOKEN_RECEIVED");
-        localStorage.setItem('token', syncData.token);
-      } else {
-        console.error(">> TOKEN_GENERATION_FAILED");
-      }
-
-      // Save email immediately
-      localStorage.setItem('email', user.email);
-
-      // 2. IMMEDIATE ADMIN CHECK & REDIRECT
-      // Now that we have the token, we can safely redirect
-      const isAdmin = user.email === ADMIN_EMAIL;
-      console.log('ADMIN_DETECTED:', user.email, '| IS_ADMIN:', isAdmin);
-
-      if (isAdmin) {
-        console.log("ADMIN_IDENTITY_VERIFIED_LOCALLY: FORCING_REDIRECT");
-        // Clear any stale state
-        if (localStorage.getItem("role") === 'user') {
-          localStorage.removeItem("role");
-        }
-
-        setRole('admin');
-        setUser(user);
-        localStorage.setItem("role", "admin");
-
-        window.location.href = "/admin";
-        return;
-      }
-
+      // GitHub Token Handling if applicable
       if (providerType === 'github') {
         const credential = GithubAuthProvider.credentialFromResult(result);
         if (credential && credential.accessToken) {
           setGithubToken(credential.accessToken);
           localStorage.setItem("github_token", credential.accessToken);
+
+          // FORCE SYNC (PERSISTENCE)
+          const updatedUser = { ...user, githubAccessToken: credential.accessToken };
+          await syncUserWithBackend(updatedUser);
         }
       }
+
+      // onAuthStateChanged will handle the rest (sync, state update)
+
     } catch (error) {
       console.error("AUTH_FAILURE:", error);
+
+      // --- SOFT LINK STRATEGY (Credential Already In Use) ---
+      if (error.code === 'auth/credential-already-in-use' && providerType === 'github') {
+        const confirmSwitch = window.confirm("This GitHub account is already used by another user. Do you want to merge its access token to this account? (This involves a quick re-login)");
+        if (confirmSwitch) {
+          try {
+            // 1. Capture the GitHub Token by logging in directly
+            console.log(">> SOFT_LINK: Switching to GitHub to capture token...");
+            const ghResult = await signInWithPopup(auth, githubProvider);
+            const credential = GithubAuthProvider.credentialFromResult(ghResult);
+            const ghToken = credential.accessToken;
+
+            if (ghToken) {
+              console.log(">> SOFT_LINK: Token Captured. Saving temporarily.");
+              localStorage.setItem("pending_github_token", ghToken);
+
+              // 2. Re-login with Google to attach it
+              await signOut(auth);
+              console.log(">> SOFT_LINK: Re-authenticating with Google...");
+              alert("GithHub Access Confirmed. Please sign in with Google again to finish the merge.");
+              await signInWithPopup(auth, googleProvider); // Force re-login
+
+              // 3. Sync will happen automatically via onAuthStateChanged or handleLogin success flow? 
+              // handleLogin 'success' flow is basically here if we recursed, but we are in catch block.
+              // The onAuthStateChanged listener will fire for the Google login. 
+              // We need to ensure syncUserWithBackend picks up 'pending_github_token'.
+            }
+          } catch (innerErr) {
+            console.error("SOFT_LINK_FAILURE:", innerErr);
+          }
+        }
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        console.warn("Auth popup closed by user.");
+      } else {
+        // alert("Login failed. Check console for details."); 
+      }
     } finally {
       setLoadingAction(false);
     }
@@ -282,7 +382,13 @@ function App() {
         {/* PUBLIC ROOT: Compiler accessible to everyone */}
         <Route
           path="/"
-          element={<UserDashboard githubToken={githubToken} user={user} />}
+          element={<UserDashboard githubToken={githubToken} user={user} role={role} onConnectGithub={() => {
+            if (!user) {
+              window.location.href = '/login';
+            } else {
+              handleLogin('github');
+            }
+          }} />}
         />
 
         {/* LOGIN PAGE: Only for guests. If logged in, go to home/dashboard */}
