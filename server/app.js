@@ -39,7 +39,7 @@ app.get('/test', (req, res) => {
 });
 
 app.get('/test-refresh', (req, res) => {
-  res.send('REFRESH_CONFIRMED');
+  res.send('REFRESH_CONFIRMED_V2');
 });
 
 /* =======================
@@ -60,8 +60,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet({
-  crossOriginOpenerPolicy: { policy: "unsafe-none" }, // Relaxed for Google Auth & Dev
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: false, // COMPLETELY DISABLE for Google Auth Popup
+  crossOriginResourcePolicy: false, // COMPLETELY DISABLE for Piston/External Resources
   contentSecurityPolicy: false // Disable CSP for now if it conflicts
 }));
 

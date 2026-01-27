@@ -180,15 +180,39 @@ const ChatAssistant = ({ language, onInsertCode }) => {
                 </div>
             )}
 
-            {/* Floating Toggle Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center justify-center w-14 h-14 rounded-full 
-                    ${isOpen ? 'bg-neon-cyan text-black' : 'bg-black/80 text-neon-cyan border border-neon-cyan shadow-[0_0_20px_rgba(0,243,255,0.4)]'}
-                    transition-all duration-300 hover:scale-110 group`}
-            >
-                {isOpen ? <X size={24} /> : <MessageSquare size={24} className="group-hover:animate-bounce" />}
-            </button>
+            {/* Floating Toggle Button with Label */}
+            <div className="flex items-center gap-4">
+                <div className={`
+                    relative px-4 py-2 bg-[#050510]/90 border border-neon-cyan/50 rounded-xl backdrop-blur-xl 
+                    shadow-[0_0_20px_rgba(0,243,255,0.2)] 
+                    flex items-center gap-2
+                    transition-all duration-500 ease-out transform
+                    hover:scale-105 hover:border-neon-cyan hover:shadow-[0_0_30px_rgba(0,243,255,0.4)]
+                    ${isOpen ? 'opacity-0 translate-x-8 pointer-events-none' : 'opacity-100 translate-x-0'}
+                `}>
+                    {/* Pulsing Status Dot */}
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-cyan opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-cyan"></span>
+                    </span>
+
+                    <span className="text-[10px] font-bold text-white tracking-[0.2em] font-mono typing-effect drop-shadow-[0_0_5px_rgba(0,243,255,0.8)]">
+                        AI_ASSISTANT
+                    </span>
+
+                    {/* Decorative Corner Accent */}
+                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-neon-cyan rounded-tr-sm opacity-50"></div>
+                </div>
+
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={`flex items-center justify-center w-14 h-14 rounded-full 
+                        ${isOpen ? 'bg-neon-cyan text-black' : 'bg-black/80 text-neon-cyan border border-neon-cyan shadow-[0_0_20px_rgba(0,243,255,0.4)]'}
+                        transition-all duration-300 hover:scale-110 group z-50`}
+                >
+                    {isOpen ? <X size={24} /> : <MessageSquare size={24} className="group-hover:animate-bounce" />}
+                </button>
+            </div>
         </div>
     );
 };

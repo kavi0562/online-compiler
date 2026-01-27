@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-// import { Link } from "react-router-dom"; // Loop removed
+import { useLocation } from "react-router-dom";
 import ReactorCore from "./scifi/ReactorCore";
 import ControlDeck from "./scifi/ControlDeck";
 import HoloTerminal from "./scifi/HoloTerminal";
@@ -32,6 +32,7 @@ const BOILERPLATES = {
 };
 
 function UserDashboard({ githubToken, user, role, onConnectGithub }) {
+  const location = useLocation();
   const [code, setCode] = useState(BOILERPLATES["python"] || "");
   const [language, setLanguage] = useState("python");
   const [languages] = useState(LANGUAGES);
@@ -46,6 +47,21 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
 
   const [inputHints, setInputHints] = useState([]);
   const [formValues, setFormValues] = useState({});
+
+  // Handle Incoming State from Syllabus
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.language) {
+        setLanguage(location.state.language);
+      }
+      if (location.state.challengeCode) {
+        setCode(location.state.challengeCode);
+      }
+      // Clear state to prevent loop/re-apply on refresh if desired, 
+      // though react-router state persists.
+      // We'll let it persist for now so refresh is stable.
+    }
+  }, [location.state]);
   // Local state to track usage immediately without refresh
   const [localUsageCount, setLocalUsageCount] = useState(user?.githubSyncUsage || 0);
   const [isEditorMaximized, setIsEditorMaximized] = useState(false);
@@ -68,10 +84,11 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
           }
         })
         .catch(err => {
-          console.error("HISTORY_DESC_FAILED:", err);
-          if (err.response) {
-            console.error("HISTORY_ERR_RESPONSE:", err.response.status, err.response.data);
+          if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+            // Expected for guest/unauth users - silent fail
+            return;
           }
+          console.error("HISTORY_DESC_FAILED:", err);
         });
     }
   }, [user]);
@@ -138,32 +155,65 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
     setActiveLogId(null);
   };
 
-  const handleDownload = () => {
-    // Create Blob
-    const blob = new Blob([code], { type: 'text/plain' });
-    // Create Link
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    // Extension Map
+  const handleDownload = async () => {
+    // Extended Extension Map
     const extMap = {
       'python': 'py',
+      'java': 'java',
       'javascript': 'js',
       'cpp': 'cpp',
       'c': 'c',
-      'java': 'java'
+      'csharp': 'cs',
+      'go': 'go',
+      'rust': 'rs',
+      'php': 'php',
+      'ruby': 'rb',
+      'swift': 'swift',
+      'typescript': 'ts',
+      'bash': 'sh',
     };
 
-    link.href = url;
-    link.download = `main.${extMap[language] || 'txt'}`;
+    const extension = extMap[language] || 'txt';
+    const defaultName = `main.${extension}`;
 
-    // Trigger Download
-    document.body.appendChild(link);
-    link.click();
+    try {
+      // Check if the File System Access API is supported
+      if ('showSaveFilePicker' in window) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: defaultName,
+          types: [{
+            description: 'Source Code',
+            accept: { 'text/plain': [`.${extension}`] },
+          }],
+        });
 
-    // Cleanup
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+        const writable = await handle.createWritable();
+        await writable.write(code);
+        await writable.close();
+      } else {
+        // Fallback for browsers that don't support the API
+        throw new Error("File System Access API not supported");
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        // User cancelled the picker, do nothing
+        return;
+      }
+
+      console.warn("Falling back to legacy download:", err);
+      // specific fallback logic
+      const blob = new Blob([code], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = defaultName;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }
   };
 
   const handleFileUpload = ({ content, fileName, extension }) => {
@@ -233,19 +283,47 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
         setIsError(true);
         hasError = true;
       }
-      setOutput(result);
+      // OUTPUT VALIDATION LOGIC
+      let finalOutput = result;
+      let verificationStatus = 'success'; // default to success if no validation needed
+
+      if (location.state?.expectedOutput) {
+        const normalize = (str) => str.toString().trim().replace(/\r\n/g, '\n');
+        const expected = normalize(location.state.expectedOutput);
+        const actual = normalize(result);
+
+        if (actual === expected) {
+          finalOutput += `\n\n// ✅ CHALLENGE COMPLETED! \n// STATUS: VERIFIED`;
+
+          // Save Completion
+          if (location.state.problemId) {
+            const completed = JSON.parse(localStorage.getItem('completed_problems')) || [];
+            if (!completed.includes(location.state.problemId)) {
+              completed.push(location.state.problemId);
+              localStorage.setItem('completed_problems', JSON.stringify(completed));
+            }
+          }
+        } else {
+          finalOutput += `\n\n// ❌ INCORRECT OUTPUT\n// EXPECTED: ${expected}\n// GOT:      ${actual}`;
+          verificationStatus = 'fail';
+          // Even if execution was successful (no code error), logic is wrong
+          setIsError(true);
+        }
+      }
+
+      setOutput(finalOutput);
 
       // Add to History
       const newLog = {
-        id: runId,
+        id: res.data.historyId || runId, // Use real DB ID if available
         language: language,
         code: code,
-        status: hasError ? 'fail' : 'success',
+        status: hasError ? 'fail' : verificationStatus,
         timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
         duration: duration
       };
       setHistory(prev => [newLog, ...prev].slice(0, 10));
-      setActiveLogId(runId);
+      setActiveLogId(res.data.historyId || runId);
 
     } catch (err) {
       const endTime = Date.now();
@@ -313,6 +391,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   };
 
   const handleDeleteHistory = async (logId) => {
+    if (!logId) return;
     try {
       await axios.delete(`http://localhost:5051/api/compiler/history/${logId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -320,13 +399,24 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
       setHistory(prev => prev.filter(log => log.id !== logId));
       if (activeLogId === logId) setActiveLogId(null);
     } catch (err) {
-      console.error("DELETE_HISTORY_ERROR:", err);
+      console.error("DELETE_HISTORY_ERROR:", JSON.stringify(err.response?.data || err.message, null, 2));
+      // Also log the ID we tried to delete for context
+      console.error("FAILED_LOG_ID:", logId);
     }
   };
 
-  const clearHistory = () => {
-    setHistory([]);
-    setActiveLogId(null);
+  const clearHistory = async () => {
+    try {
+      await axios.delete("http://localhost:5051/api/compiler/history/all", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      });
+      setHistory([]);
+      setActiveLogId(null);
+      // alert("History Cleared Permanently"); // Optional feedback
+    } catch (err) {
+      console.error("CLEAR_HISTORY_ERROR:", JSON.stringify(err.response?.data || err.message, null, 2));
+      alert("Failed to clear history: " + (err.response?.data?.error || err.message));
+    }
   };
 
   const clearConsole = () => {
@@ -512,36 +602,72 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             <Database size={40} className="text-neon-magenta" />
           </div>
           <span className="text-[10px] text-neon-magenta tracking-widest mb-1 font-bold">ACTIVE MODULE</span>
-          <div className="flex flex-wrap items-center gap-2 pb-1 md:pb-0">
-            <LanguageSelector languages={languages} selected={language} onSelect={handleLanguageChange} />
-            <FileUpload onFileUpload={handleFileUpload} />
+          <div className="flex flex-col gap-3 w-full">
+            {/* Active Module & Actions Row */}
+            <div className="flex items-center gap-2 w-full">
+              <div className="flex-1 min-w-0">
+                <LanguageSelector languages={languages} selected={language} onSelect={handleLanguageChange} />
+              </div>
 
-            {/* Navigation Buttons (Moved back to Navbar) */}
-            <button
-              onClick={handleDownload}
-              className="p-3 md:p-2 rounded-lg flex items-center gap-1 transition-all duration-300 
-                         bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan 
-                         hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.6)] 
-                         shadow-[0_0_10px_rgba(0,243,255,0.15)]"
-              title="Download Code"
-            >
-              <Download size={20} />
-            </button>
-            <button
-              onClick={handleShare}
-              className="p-3 md:p-2 rounded-lg flex items-center gap-1 transition-all duration-300 
-                         bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan 
-                         hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.6)] 
-                         shadow-[0_0_10px_rgba(0,243,255,0.15)]"
-              title="Share Code"
-            >
-              <Share2 size={20} />
-            </button>
+              {/* Action Toolbar */}
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Upload Button */}
+                <div className="w-[34px] h-[34px]">
+                  <FileUpload onFileUpload={handleFileUpload} fullWidth className="p-0 h-full" />
+                </div>
+
+                {/* Download Button */}
+                <div className="relative group w-[34px] h-[34px]">
+                  <button
+                    onClick={handleDownload}
+                    className="relative flex items-center justify-center w-full h-full p-0
+                             bg-neon-cyan/5 border border-neon-cyan/30 
+                             rounded-lg backdrop-blur-md transition-all duration-300 
+                             hover:bg-neon-cyan/10 hover:border-neon-cyan/60
+                             hover:shadow-[0_0_10px_rgba(0,243,255,0.2)]
+                             group z-10"
+                  >
+                    <span className="absolute inset-0 rounded-lg border border-neon-cyan opacity-0 group-hover:opacity-20 transition-opacity"></span>
+                    <Download size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 
+                                  bg-neon-cyan/90 text-black text-[9px] font-bold tracking-widest rounded
+                                  transform opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
+                    DOWNLOAD
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan/90"></div>
+                  </div>
+                </div>
+
+                {/* Share Button */}
+                <div className="relative group w-[34px] h-[34px]">
+                  <button
+                    onClick={handleShare}
+                    className="relative flex items-center justify-center w-full h-full p-0
+                             bg-neon-cyan/5 border border-neon-cyan/30 
+                             rounded-lg backdrop-blur-md transition-all duration-300 
+                             hover:bg-neon-cyan/10 hover:border-neon-cyan/60
+                             hover:shadow-[0_0_10px_rgba(0,243,255,0.2)]
+                             group z-10"
+                  >
+                    <span className="absolute inset-0 rounded-lg border border-neon-cyan opacity-0 group-hover:opacity-20 transition-opacity"></span>
+                    <Share2 size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 
+                                  bg-neon-cyan/90 text-black text-[9px] font-bold tracking-widest rounded
+                                  transform opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
+                    SHARE
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan/90"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Stdin (Top Right) */}
-        <div className="hidden md:flex col-span-6 md:col-span-4 row-span-2 bg-glass border border-glass rounded-2xl p-3 flex-col shadow-lg relative min-h-[150px] h-auto transition-all duration-300">
+        <div className="hidden md:flex col-span-6 md:col-span-4 row-span-2 bg-glass border border-glass rounded-2xl p-3 flex-col shadow-lg relative h-full overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] text-neon-cyan tracking-widest font-bold flex items-center gap-2">
               <LayoutTemplate size={12} /> INPUT
@@ -575,20 +701,10 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             </div>
           ) : (
             <textarea
-              className="w-full bg-[#050510]/50 bg-grid border border-[#30363d] rounded-xl p-3 text-[10px] font-mono text-gray-300 focus:border-neon-cyan focus:outline-none resize-none transition-all placeholder-gray-600 custom-scrollbar overflow-hidden min-h-[100px]"
+              className="w-full h-full bg-[#050510]/50 bg-grid border border-[#30363d] rounded-xl p-3 text-[10px] font-mono text-gray-300 focus:border-neon-cyan focus:outline-none resize-none transition-all placeholder-gray-600 custom-scrollbar"
               placeholder="// Awaiting input data..."
               value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }}
-              ref={(ref) => {
-                if (ref) {
-                  ref.style.height = 'auto';
-                  ref.style.height = ref.scrollHeight + 'px';
-                }
-              }}
+              onChange={(e) => setInput(e.target.value)}
               spellCheck={false}
             />
           )}
@@ -614,7 +730,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
         </div>
 
         {/* RIGHT SIDEBAR: Core AI + Temporal Logs (Desktop Only) - Protected in Guest Mode */}
-        <div className="hidden md:flex col-span-4 row-span-7 flex-col gap-4">
+        <div className="hidden md:flex col-span-4 row-span-7 flex-col gap-2">
           <GithubSyncPanel
             onUplink={handleUplink}
             onConnectGithub={onConnectGithub}
@@ -627,7 +743,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             isAutoPushEnabled={isAutoPushEnabled}
             onToggleAutoPush={setIsAutoPushEnabled}
           />
-          <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} onDelete={handleDeleteHistory} activeLogId={activeLogId} />
+          <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} onDelete={handleDeleteHistory} activeLogId={activeLogId} user={user} onConnectGithub={onConnectGithub} />
         </div>
 
         {/* HOLO TERMINAL (Bottom) */}
@@ -636,7 +752,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
         </div>
 
         {/* CONTROL DECK (Bottom Right) */}
-        <div className="w-full md:col-span-4 md:row-span-2 flex items-center justify-center order-4 md:order-none py-4 md:py-0">
+        <div className="w-full md:col-span-4 md:row-span-3 flex items-start justify-center pt-2 order-4 md:order-none py-4 md:py-0">
           <ControlDeck
             onRun={runCode}
             onClear={clearConsole}
