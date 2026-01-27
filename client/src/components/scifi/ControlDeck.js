@@ -8,14 +8,17 @@ const ControlDeck = ({ onRun, onClear, isThinking, onHoverChange }) => {
             {/* Base Plate */}
             <div className="absolute inset-0 bg-panel border-t border-glass backdrop-blur-md rounded-t-[40px] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"></div>
 
-            {/* Clear Button (Secondary) */}
-            <button
-                onClick={onClear}
-                className="relative z-10 flex items-center gap-2 px-4 py-2 border border-[#30363d] rounded-lg
-                         text-gray-400 hover:text-white hover:bg-white/5 transition-all uppercase tracking-widest text-xs"
-            >
-                <Trash2 size={14} /> PURGE
-            </button>
+            {/* Left Side: Cache Status */}
+            <div className="relative z-10 hidden sm:flex flex-col items-center">
+                <span className="text-[10px] text-gray-500 tracking-widest">CACHE MEMORY</span>
+                <button
+                    onClick={onClear}
+                    className="flex items-center gap-2 px-3 py-1 mt-1 border border-[#30363d] rounded-lg
+                             text-gray-400 hover:text-white hover:bg-white/5 transition-all uppercase tracking-widest text-[10px]"
+                >
+                    <Trash2 size={10} /> PURGE
+                </button>
+            </div>
 
             {/* Ignition Switch (Primary) */}
             <div className="relative z-10 group">
@@ -55,14 +58,15 @@ const ControlDeck = ({ onRun, onClear, isThinking, onHoverChange }) => {
                 </div>
             </div>
 
-            {/* Status Indicator (Dummy) */}
+            {/* Right Side: System Status (Restored) */}
             <div className="relative z-10 hidden sm:flex flex-col items-center">
                 <span className="text-[10px] text-gray-500 tracking-widest">SYSTEM STATUS</span>
-                <span className="text-xs text-neon-green flex items-center gap-1">
+                <span className="text-xs text-neon-green flex items-center gap-1 mt-1">
                     <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
                     OPTIMAL
                 </span>
             </div>
+
         </div>
     );
 };

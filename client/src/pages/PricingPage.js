@@ -7,6 +7,7 @@ import ReactorLogo from '../components/scifi/ReactorLogo';
 const PricingPage = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const [billingCycle, setBillingCycle] = useState('monthly');
 
     const handleUpgrade = async (plan) => {
         setLoading(true);
@@ -20,7 +21,7 @@ const PricingPage = () => {
 
             // Mock Payment Call
             const res = await axios.post('http://localhost:5051/api/payment/upgrade',
-                { plan },
+                { plan, billingCycle }, // Passing cycle to backend
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -55,7 +56,7 @@ const PricingPage = () => {
                 <h3 className={`text-2xl font-bold tracking-wider text-${color}`}>{title}</h3>
                 <div className="flex items-baseline gap-1 mt-2">
                     <span className="text-4xl font-bold text-white">{price}</span>
-                    <span className="text-sm text-gray-400">/mo</span>
+                    <span className="text-sm text-gray-400">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                 </div>
             </div>
 
@@ -109,6 +110,22 @@ const PricingPage = () => {
                     </div>
                 )}
 
+                <div className="flex justify-center items-center gap-4 mb-4">
+                    <span className={`text-sm font-bold tracking-widest transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>MONTHLY</span>
+
+                    <button
+                        onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
+                        className={`w-14 h-7 rounded-full p-1 transition-colors duration-300 relative ${billingCycle === 'yearly' ? 'bg-neon-cyan' : 'bg-gray-700'}`}
+                    >
+                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${billingCycle === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                    </button>
+
+                    <span className={`text-sm font-bold tracking-widest transition-colors flex items-center gap-2 ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>
+                        YEARLY
+                        <span className="text-[10px] bg-neon-magenta/20 text-neon-magenta px-2 py-0.5 rounded-full border border-neon-magenta/30">SAVE 20%</span>
+                    </span>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                     {/* FREE TIER */}
                     <PlanCard
@@ -116,7 +133,7 @@ const PricingPage = () => {
                         price="₹0"
                         color="gray-400"
                         icon={Shield}
-                        planId="free" // Though "upgrade" to free doesn't make much sense unless downgrading, but endpoint handles it
+                        planId="free"
                         features={[
                             "Basic Code Execution",
                             "Public Access",
@@ -129,7 +146,7 @@ const PricingPage = () => {
                     {/* PRO TIER */}
                     <PlanCard
                         title="PRO"
-                        price="₹349"
+                        price={billingCycle === 'monthly' ? "₹349" : "₹3,499"}
                         color="neon-cyan"
                         icon={Zap}
                         planId="pro"
@@ -146,7 +163,7 @@ const PricingPage = () => {
                     {/* ENTERPRISE TIER */}
                     <PlanCard
                         title="SYNDICATE"
-                        price="₹999"
+                        price={billingCycle === 'monthly' ? "₹999" : "₹9,999"}
                         color="neon-magenta"
                         icon={Star}
                         planId="enterprise"

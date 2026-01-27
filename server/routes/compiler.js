@@ -145,16 +145,18 @@ const LANGUAGE_MAP = {
 
 // GET /history - Fetch execution logs
 router.get("/history", async (req, res) => {
-  console.log("🔔 GET /history HIT");
+  // console.log("🔔 GET /history HIT");
   const token = req.header("Authorization")?.replace("Bearer ", "");
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
+
+  // Handle case where client sends "Bearer null" literal string
+  if (!token || token === "null" || token === "undefined") {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded) {
-      return res.status(401).json({ error: "Invalid Token" });
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ error: "Invalid Token Payload" });
     }
 
     const history = await CodeHistory.find({ userId: decoded.id })
@@ -173,8 +175,37 @@ router.get("/history", async (req, res) => {
     res.json(formattedHistory);
 
   } catch (err) {
-    console.error("FETCH_HISTORY_ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch history" });
+    // Specific Handling for Common Errors
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      console.warn("HISTORY_AUTH_FAIL:", err.message);
+      return res.status(401).json({ error: "Invalid or Expired Token" });
+    }
+
+    if (err.name === 'CastError') {
+      console.warn("HISTORY_INVALID_ID:", err.message);
+      return res.status(400).json({ error: "Invalid User ID format" });
+    }
+
+    console.error("FETCH_HISTORY_CRITICAL_FAILURE:", err);
+    res.status(500).json({ error: "Internal Server Error: Failed to fetch history" });
+  }
+});
+
+// 🗑️ DELETE ALL HISTORY FOR USER (Clear Console)
+router.delete("/history/all", async (req, res) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) return res.status(401).json({ error: "Invalid Token" });
+
+    await CodeHistory.deleteMany({ userId: decoded.id });
+    res.json({ message: "All history cleared successfully" });
+
+  } catch (error) {
+    console.error("Clear All History Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -280,34 +311,40 @@ router.post("/execute", async (req, res) => {
       ip: clientIp
     });
 
-    res.json({
-      output: result.output || "⚠️ No output",
-      isError: result.isError
-    });
-
     // 💾 SAVE HISTORY (If User is Logged In)
     const token = req.header("Authorization")?.replace("Bearer ", "");
+    let historyId = null;
+
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (decoded) {
-          await CodeHistory.create({
+          const savedLog = await CodeHistory.create({
             userId: decoded.id,
             language,
             code,
             output: result.output || "⚠️ No output"
           });
+          historyId = savedLog._id;
         }
       } catch (err) {
         console.error("Failed to save history:", err.message);
       }
     }
 
+    res.json({
+      output: result.output || "⚠️ No output",
+      isError: result.isError,
+      historyId: historyId
+    });
+
   } catch (error) {
     console.error("Execution Error:", error.message);
     res.json({ output: "❌ Critical Execution Failure", isError: true });
   }
 });
+
+
 
 
 

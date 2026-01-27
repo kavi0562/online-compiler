@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 
-const FileUpload = ({ onFileUpload }) => {
+const FileUpload = ({ onFileUpload, className = "", fullWidth = false }) => {
     const fileInputRef = useRef(null);
     const [isHovered, setIsHovered] = useState(false);
 
@@ -29,7 +29,7 @@ const FileUpload = ({ onFileUpload }) => {
     };
 
     return (
-        <div className="relative group">
+        <div className={`relative group ${fullWidth ? 'w-full' : ''} ${className}`}>
             <input
                 type="file"
                 ref={fileInputRef}
@@ -41,28 +41,27 @@ const FileUpload = ({ onFileUpload }) => {
                 onClick={handleButtonClick}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="relative flex items-center justify-center p-3 md:p-2
-                           bg-neon-cyan/10 border border-neon-cyan/50 
+                className={`relative flex items-center justify-center p-0 h-full w-full
+                           bg-neon-cyan/5 border border-neon-cyan/30 
                            rounded-lg backdrop-blur-md transition-all duration-300 
-                           hover:bg-neon-cyan/20 
-                           hover:shadow-[0_0_20px_rgba(0,243,255,0.6)]
-                           shadow-[0_0_10px_rgba(0,243,255,0.15)]
-                           group z-10"
-                title="Upload Code"
+                           hover:bg-neon-cyan/10 hover:border-neon-cyan/60
+                           hover:shadow-[0_0_10px_rgba(0,243,255,0.2)]
+                           group z-10`}
+                aria-label="Upload Code"
             >
                 {/* Pulse Ring for Highlight */}
-                <span className="absolute inset-0 rounded-lg border border-neon-cyan opacity-20 animate-pulse pointer-events-none"></span>
+                <span className="absolute inset-0 rounded-md border border-neon-cyan opacity-0 group-hover:opacity-20 transition-opacity"></span>
 
                 <div className="flex items-center gap-2">
-                    <Upload size={20} className="text-neon-cyan transition-colors" />
+                    <Upload size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
                 </div>
             </button>
 
             {/* Custom Popup / Tooltip */}
-            <div className={`absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 
-                            bg-neon-cyan/90 text-black text-[10px] font-bold tracking-widest rounded
+            <div className={`absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 
+                            bg-neon-cyan/90 text-black text-[9px] font-bold tracking-widest rounded
                             transform transition-all duration-200 pointer-events-none
-                            ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                            ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}>
                 UPLOAD
                 {/* Arrow */}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan/90"></div>

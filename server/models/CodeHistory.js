@@ -19,7 +19,8 @@ const codeHistorySchema = new mongoose.Schema({
     },
     timestamp: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        expires: 86400 // TTL Index: Documents expire 24 hours after creation
     }
 });
 
