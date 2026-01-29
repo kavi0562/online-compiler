@@ -83,13 +83,16 @@ const TemporalLogs = ({ history, onRestore, onClear, onDelete, activeLogId, user
                                     </div>
 
                                     <div className="flex flex-col group-hover:translate-x-12 transition-transform duration-300">
-                                        <span className={`text-[10px] font-bold transition-colors uppercase flex items-center gap-2 ${activeLogId === log.id ? 'text-neon-cyan' : 'text-gray-300 group-hover:text-neon-cyan'}`}>
-                                            <FileCode size={10} className="text-gray-500" />
-                                            {log.language}
+                                        <span className={`text-[10px] font-bold truncate max-w-[100px] mb-0.5 ${activeLogId === log.id ? 'text-neon-cyan' : 'text-gray-200'}`}>
+                                            {log.description || "Quick Run"}
                                         </span>
-                                        <span className="text-[9px] text-gray-600 font-mono">
-                                            {log.timestamp}
-                                        </span>
+                                        <div className="flex items-center gap-2 text-[9px] text-gray-500 font-mono">
+                                            <span className="flex items-center gap-1 uppercase">
+                                                <FileCode size={8} /> {log.language}
+                                            </span>
+                                            <span>•</span>
+                                            <span>{log.timestamp}</span>
+                                        </div>
                                     </div>
                                 </div>
 

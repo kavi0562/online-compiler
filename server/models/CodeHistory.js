@@ -14,6 +14,10 @@ const codeHistorySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String,
+        default: "Quick Run"
+    },
     output: {
         type: String
     },

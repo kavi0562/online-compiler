@@ -1,285 +1,295 @@
 export const PYTHON_SYLLABUS = [
     {
-        "topic_name": "Variables & Data Types",
-        "programs": [
+        id: "py_basics",
+        topic_name: "Module 1: Basics",
+        progress_status: "not_started",
+        concept: {
+            theory: "Python is a high-level, interpreted language known for its readability. This module covers installation, print statements, variables, and data types (int, float, str, bool).",
+            real_life_example: "Variables are like named boxes in a warehouse. You can label a box 'Toys' and put a toy car inside (`toys = 'car'`).",
+            syntax: "name = \"Alice\"\nage = 25\nprint(name, age)"
+        },
+        example_code: {
+            language: "python",
+            code: "# Basics Example\nname = \"HackerMode\"\nversion = 2.0\nis_awesome = True\n\nprint(f\"Welcome to {name} v{version}\")\nprint(\"Awesome status:\", is_awesome)"
+        },
+        practice_questions: [
             {
-                "id": "py_v1",
-                "title": "Variable Swapping",
-                "definition": "Write a program to swap two variables without using a temporary variable.",
-                "logic": ["Read two integers a and b", "a = a + b", "b = a - b", "a = a - b", "Print swapped values"],
-                "sampleInput": "a = 5, b = 10",
-                "sampleOutput": "a = 10, b = 5",
-                "initialCode": { "python": "# Write your code here\na = 5\nb = 10\n# Swap logic..." }
+                id: "py_b1",
+                title: "Variable Swap",
+                difficulty: "Easy",
+                definition: "Swap two variables a and b without a third variable.",
+                initialCode: "a = 5\nb = 10\n# Logic here"
             },
             {
-                "id": "py_v2",
-                "title": "Type Conversion",
-                "definition": "Convert an integer to float and a float to integer.",
-                "logic": ["Read integer x and float y", "Convert x to float", "Convert y to int", "Print results"],
-                "sampleInput": "10, 5.75",
-                "sampleOutput": "10.0, 5",
-                "initialCode": { "python": "x = 10\ny = 5.75\n# Convert and print..." }
-            },
-            {
-                "id": "py_v3",
-                "title": "User Personal Details",
-                "definition": "Store name, age, and height in variables and print them.",
-                "logic": ["Define variables name (str), age (int), height (float)", "Print formatted string"],
-                "sampleInput": "John, 25, 5.9",
-                "sampleOutput": "Name: John, Age: 25, Height: 5.9",
-                "initialCode": { "python": "name = \"John\"\nage = 25\nheight = 5.9\n# Print details..." }
-            },
-            {
-                "id": "py_v4",
-                "title": "Complex Number Creation",
-                "definition": "Create a complex number from two distinct numbers and print its real and imaginary parts.",
-                "logic": ["Read real part", "Read imaginary part", "Use complex() function", "Print attributes .real and .imag"],
-                "sampleInput": "3, 4",
-                "sampleOutput": "3.0, 4.0",
-                "initialCode": { "python": "real = 3\nimag = 4\nc = complex(real, imag)\n# Print parts..." }
-            },
-            {
-                "id": "py_v5",
-                "title": "Area of Circle Constant",
-                "definition": "Calculate area of circle using a constant for PI.",
-                "logic": ["Define PI = 3.14159", "Read radius r", "Area = PI * r * r", "Print area formatted to 2 decimals"],
-                "sampleInput": "5",
-                "sampleOutput": "78.54",
-                "initialCode": { "python": "PI = 3.14159\nr = 5\n# Calculate area..." }
+                id: "py_b2",
+                title: "Type Casting",
+                difficulty: "Easy",
+                definition: "Convert string '123' to integer and add 10.",
+                initialCode: "s = '123'\n# Convert and add"
             }
-        ]
+        ],
+        challenge: {
+            id: "ch_py_basics",
+            title: "Identity Badge",
+            difficulty: "Easy",
+            definition: "Create a program that takes `name` and `age` as input variables, and prints a formatted badge string: 'Agent [Name], Level [Age]'.",
+            initialCode: "name = \"Neo\"\nage = 30\n# Print formatted string",
+            test_case: {
+                input: "None",
+                output: "Agent Neo, Level 30"
+            }
+        }
     },
     {
-        "topic_name": "Operators",
-        "programs": [
+        id: "py_control",
+        topic_name: "Module 2: Control Statements",
+        progress_status: "not_started",
+        concept: {
+            theory: "Control flow allows your program to make decisions. Use `if`, `elif`, `else` for conditions, and `for`/`while` loops for repetition. `break` and `continue` modify loop behavior.",
+            real_life_example: "Traffic lights: IF red, stop. ELIF yellow, wait. ELSE (green), go.",
+            syntax: "if x > 10:\n    print('Big')\n\nfor i in range(5):\n    print(i)"
+        },
+        example_code: {
+            language: "python",
+            code: "for i in range(1, 6):\n    if i == 3:\n        continue # Skip 3\n    print(f\"Count: {i}\")"
+        },
+        practice_questions: [
             {
-                "id": "py_op1",
-                "title": "Arithmetic Calculator",
-                "definition": "Perform addition, subtraction, multiplication, division, and modulus of two numbers.",
-                "logic": ["Read num1 and num2", "Calculate sum, diff, product, quotient, remainder", "Print all results"],
-                "sampleInput": "10, 3",
-                "sampleOutput": "Add: 13, Sub: 7, Mul: 30, Div: 3.33, Mod: 1",
-                "initialCode": { "python": "a = 10\nb = 3\n# Perform operations..." }
+                id: "py_c1",
+                title: "Even or Odd",
+                difficulty: "Easy",
+                definition: "Check if a number is even or odd.",
+                initialCode: "num = 7\n# Logic"
             },
             {
-                "id": "py_op2",
-                "title": "Floor Division & Exponen...",
-                "definition": "Demonstrate the use of // and ** operators.",
-                "logic": ["Read base and power", "Calculate power using **", "Calculate floor division of base by 3", "Print results"],
-                "sampleInput": "10, 2",
-                "sampleOutput": "Exponent: 100, Floor Div: 3",
-                "initialCode": { "python": "base = 10\npower = 2\n# Calculate..." }
-            },
-            {
-                "id": "py_op3",
-                "title": "Logical Operator Check",
-                "definition": "Check if a number is divisible by both 5 and 3.",
-                "logic": ["Read number n", "Check if (n % 5 == 0) AND (n % 3 == 0)", "Print True or False"],
-                "sampleInput": "15",
-                "sampleOutput": "True",
-                "initialCode": { "python": "n = 15\n# Check logic..." }
-            },
-            {
-                "id": "py_op4",
-                "title": "Identity Operators",
-                "definition": "Check if two lists have the same identity vs same content.",
-                "logic": ["Create list1 = [1,2]", "Create list2 = [1,2]", "Print list1 is list2", "Print list1 == list2"],
-                "sampleInput": "None",
-                "sampleOutput": "False, True",
-                "initialCode": { "python": "l1 = [1, 2]\nl2 = [1, 2]\nprint(l1 is l2)\nprint(l1 == l2)" }
-            },
-            {
-                "id": "py_op5",
-                "title": "Bitwise Operations",
-                "definition": "Perform Bitwise AND, OR, and XOR on two integers.",
-                "logic": ["Read a and b", "Print a & b", "Print a | b", "Print a ^ b"],
-                "sampleInput": "5, 3",
-                "sampleOutput": "AND: 1, OR: 7, XOR: 6",
-                "initialCode": { "python": "a = 5\nb = 3\n# Bitwise ops..." }
+                id: "py_c2",
+                title: "Sum N Numbers",
+                difficulty: "Medium",
+                definition: "Calculate sum of first 100 numbers using loop.",
+                initialCode: "total = 0\n# Loop"
             }
-        ]
+        ],
+        challenge: {
+            id: "ch_py_prime",
+            title: "Prime Validator",
+            difficulty: "Medium",
+            definition: "Write a program to check if a given number `n` is prime.",
+            initialCode: "n = 29\nis_prime = True\n# Logic to check prime\n\nprint(\"Prime\" if is_prime else \"Not Prime\")",
+            test_case: {
+                input: "29",
+                output: "Prime"
+            }
+        }
     },
     {
-        "topic_name": "Conditional Statements",
-        "programs": [
+        id: "py_funcs",
+        topic_name: "Module 3: Functions",
+        progress_status: "not_started",
+        concept: {
+            theory: "Functions are reusable blocks of code. They accept parameters and return values. recursion is when a function calls itself.",
+            real_life_example: "A recipe for a cake. You define the steps once (the function), and you can bake (call) it anytime with different flavors (arguments).",
+            syntax: "def greet(name):\n    return f\"Hello {name}\""
+        },
+        example_code: {
+            language: "python",
+            code: "def add(a, b=0):\n    return a + b\n\nprint(add(5, 3))\nprint(add(10))"
+        },
+        practice_questions: [
             {
-                "id": "py_if1",
-                "title": "Even or Odd",
-                "definition": "Check if a given number is even or odd.",
-                "logic": ["Read number n", "If n % 2 == 0 print 'Even'", "Else print 'Odd'"],
-                "sampleInput": "7",
-                "sampleOutput": "Odd",
-                "initialCode": { "python": "n = int(input())\nif n % 2 == 0:\n    print('Even')\nelse:\n    print('Odd')" }
-            },
-            {
-                "id": "py_if2",
-                "title": "Largest of Three",
-                "definition": "Find the largest among three numbers.",
-                "logic": ["Read a, b, c", "If a > b and a > c print a", "Else if b > c print b", "Else print c"],
-                "sampleInput": "10, 25, 15",
-                "sampleOutput": "25",
-                "initialCode": { "python": "a, b, c = 10, 25, 15\n# Logic to find max..." }
-            },
-            {
-                "id": "py_if3",
-                "title": "Leap Year Checker",
-                "definition": "Check if a year is a leap year.",
-                "logic": ["Read year", "If (year % 400 == 0) or (year % 4 == 0 and year % 100 != 0)", "Print 'Leap Year'", "Else 'Not Leap Year'"],
-                "sampleInput": "2024",
-                "sampleOutput": "Leap Year",
-                "initialCode": { "python": "year = 2024\n# Check leap year..." }
-            },
-            {
-                "id": "py_if4",
-                "title": "Grade Calculator",
-                "definition": "Calculate grade based on marks.",
-                "logic": ["Read marks", "If marks >= 90 return 'A'", "Elif marks >= 80 return 'B'", "...", "Else return 'F'"],
-                "sampleInput": "85",
-                "sampleOutput": "B",
-                "initialCode": { "python": "marks = 85\n# Determine grade..." }
-            },
-            {
-                "id": "py_if5",
-                "title": "Vowel or Consonant",
-                "definition": "Check if a character is a vowel or consonant.",
-                "logic": ["Read character char", "If char in 'aeiouAEIOU' print 'Vowel'", "Else print 'Consonant'"],
-                "sampleInput": "e",
-                "sampleOutput": "Vowel",
-                "initialCode": { "python": "char = 'e'\n# Check vowel..." }
+                id: "py_f1",
+                title: "Max of Three",
+                difficulty: "Easy",
+                definition: "Function to find max of 3 numbers.",
+                initialCode: "def max_of_three(a,b,c):\n    pass"
             }
-        ]
+        ],
+        challenge: {
+            id: "ch_py_fact",
+            title: "Factorial Recursion",
+            difficulty: "Medium",
+            definition: "Calculate factorial of N using a recursive function.",
+            initialCode: "def factorial(n):\n    # Recursive logic\n    pass\n\nprint(factorial(5))",
+            test_case: {
+                input: "5",
+                output: "120"
+            }
+        }
     },
     {
-        "topic_name": "Loops (For & While)",
-        "programs": [
+        id: "py_ds",
+        topic_name: "Module 4: Data Structures",
+        progress_status: "not_started",
+        concept: {
+            theory: "Python offers powerful built-in data structures: Lists (ordered, mutable), Tuples (ordered, immutable), Sets (unique), and Dictionaries (key-value text). List comprehensions provide concise creation syntax.",
+            real_life_example: "A Shopping List (List). A Phone Book (Dictionary). A bag of unique marbles (Set).",
+            syntax: "my_list = [1, 2, 3]\nmy_dict = {'a': 1}"
+        },
+        example_code: {
+            language: "python",
+            code: "# List Comprehension\nsquares = [x**2 for x in range(5)]\nprint(squares)\n\n# Dict\nuser = {'name': 'Kavi', 'role': 'Admin'}\nprint(user['name'])"
+        },
+        practice_questions: [
             {
-                "id": "py_loop1",
-                "title": "Sum of First N Numbers",
-                "definition": "Calculate the sum of first N natural numbers using a while loop.",
-                "logic": ["Read N", "Initialize sum = 0, i = 1", "While i <= N", "sum = sum + i", "i++", "Print sum"],
-                "sampleInput": "10",
-                "sampleOutput": "55",
-                "initialCode": { "python": "n = 10\n# Loop logic..." }
+                id: "py_ds1",
+                title: "List Sum",
+                difficulty: "Easy",
+                definition: "Sum all items in a list.",
+                initialCode: "nums = [1, 2, 3, 4]\n# Sum logic"
             },
             {
-                "id": "py_loop2",
-                "title": "Factorial Calculator",
-                "definition": "Find the factorial of a number using a for loop.",
-                "logic": ["Read n", "Initialize fact = 1", "For i in range(1, n+1)", "fact = fact * i", "Print fact"],
-                "sampleInput": "5",
-                "sampleOutput": "120",
-                "initialCode": { "python": "n = 5\n# Factorial logic..." }
-            },
-            {
-                "id": "py_loop3",
-                "title": "Multiplication Table",
-                "definition": "Print the multiplication table of a given number.",
-                "logic": ["Read n", "For i from 1 to 10", "Print n * i"],
-                "sampleInput": "3",
-                "sampleOutput": "3, 6, 9... 30",
-                "initialCode": { "python": "n = 3\n# Print table..." }
-            },
-            {
-                "id": "py_loop4",
-                "title": "Fibonacci Series",
-                "definition": "Print the first N terms of Fibonacci series.",
-                "logic": ["Read n", "Init a=0, b=1", "Print a, b", "Loop n-2 times", "c = a + b", "Print c", "a=b, b=c"],
-                "sampleInput": "5",
-                "sampleOutput": "0 1 1 2 3",
-                "initialCode": { "python": "n = 5\n# Fibonacci logic..." }
-            },
-            {
-                "id": "py_loop5",
-                "title": "Reverse a Number",
-                "definition": "Reverse a given integer using a while loop.",
-                "logic": ["Read num", "Init rev = 0", "While num > 0", "digit = num % 10", "rev = rev * 10 + digit", "num = num // 10", "Print rev"],
-                "sampleInput": "1234",
-                "sampleOutput": "4321",
-                "initialCode": { "python": "num = 1234\n# Reverse Logic..." }
-            },
-            {
-                "id": "py_loop6",
-                "title": "Prime Number Check",
-                "definition": "Check if a number is prime.",
-                "logic": ["Read n", "If n < 2 return False", "For i from 2 to sqrt(n)", "If n % i == 0 return False", "Return True"],
-                "sampleInput": "17",
-                "sampleOutput": "Prime",
-                "initialCode": { "python": "n = 17\n# Prime check..." }
+                id: "py_ds2",
+                title: "Unique Elements",
+                difficulty: "Medium",
+                definition: "Remove duplicates from a list using Set.",
+                initialCode: "nums = [1, 2, 2, 3]\n# Logic"
             }
-        ]
+        ],
+        challenge: {
+            id: "ch_py_freq",
+            title: "Frequency Counter",
+            difficulty: "Hard",
+            definition: "Count the frequency of each element in a list using a dictionary.",
+            initialCode: "arr = [1, 2, 2, 3, 3, 3]\nfreq = {}\n# Logic to count\nprint(freq)",
+            test_case: {
+                input: "None",
+                output: "{1: 1, 2: 2, 3: 3}"
+            }
+        }
     },
     {
-        "topic_name": "Functions",
-        "programs": [
+        id: "py_oop",
+        topic_name: "Module 5: OOP",
+        progress_status: "not_started",
+        concept: {
+            theory: "Object-Oriented Programming models real-world entities. Key concepts: Classes, Objects, Constructors (`__init__`), Inheritance, Polymorphism, and Encapsulation.",
+            real_life_example: "Class Animal. Object Dog. Dog inherits from Animal but overrides `speak()` (Polymorphism).",
+            syntax: "class Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        print('Woof')"
+        },
+        example_code: {
+            language: "python",
+            code: "class Person:\n    def __init__(self, name):\n        self.name = name\n    def say_hi(self):\n        print(f\"Hi, I am {self.name}\")\n\np = Person(\"Alice\")\np.say_hi()"
+        },
+        practice_questions: [
             {
-                "id": "py_fn1",
-                "title": "Simple Calculator Function",
-                "definition": "Create a function `calculate(a, b, op)` that performs basic arithmetic.",
-                "logic": ["Define function", "Check op string ('+', '-', '*', '/')", "Return result based on op"],
-                "sampleInput": "10, 5, '+'",
-                "sampleOutput": "15",
-                "initialCode": { "python": "def calculate(a, b, op):\n    pass # code\n\nprint(calculate(10, 5, '+'))" }
-            },
-            {
-                "id": "py_fn2",
-                "title": "Palindrome Checker",
-                "definition": "Create a function `is_palindrome(s)` to check string palindrome.",
-                "logic": ["Define function", "Return s == s[::-1]", "Call function with input"],
-                "sampleInput": "madam",
-                "sampleOutput": "True",
-                "initialCode": { "python": "def is_palindrome(s):\n    return s == s[::-1]\n\nprint(is_palindrome('madam'))" }
-            },
-            {
-                "id": "py_fn3",
-                "title": "Recursive Factorial",
-                "definition": "Calculate factorial using recursion.",
-                "logic": ["Define fact(n)", "Base case: if n == 0 or n == 1 return 1", "Recursive: return n * fact(n-1)"],
-                "sampleInput": "5",
-                "sampleOutput": "120",
-                "initialCode": { "python": "def fact(n):\n    if n <= 1: return 1\n    return n * fact(n-1)\n\nprint(fact(5))" }
-            },
-            {
-                "id": "py_fn4",
-                "title": "Variable Argument Sum",
-                "definition": "Function that takes variable number of arguments (*args) and returns their sum.",
-                "logic": ["Define sum_all(*args)", "Initialize total = 0", "Loop through args and add to total", "Return total"],
-                "sampleInput": "1, 2, 3, 4, 5",
-                "sampleOutput": "15",
-                "initialCode": { "python": "def sum_all(*args):\n    return sum(args)\n\nprint(sum_all(1,2,3,4,5))" }
-            },
-            {
-                "id": "py_fn5",
-                "title": "Lambda Square",
-                "definition": "Use a lambda function to calculate the square of a number.",
-                "logic": ["Define square = lambda x: x * x", "Call square(n)", "Print result"],
-                "sampleInput": "6",
-                "sampleOutput": "36",
-                "initialCode": { "python": "square = lambda x: x ** 2\nprint(square(6))" }
+                id: "py_oop1",
+                title: "Class Creation",
+                difficulty: "Easy",
+                definition: "Create a Car class with brand and model.",
+                initialCode: "class Car:\n    pass"
             }
-        ]
+        ],
+        challenge: {
+            id: "ch_py_bank",
+            title: "Bank Account System",
+            difficulty: "Hard",
+            definition: "Create a BankAccount class with deposit, withdraw, and balance methods. Prevent withdrawal if balance is low.",
+            initialCode: "class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n    \n    def deposit(self, amount):\n        pass\n        \n    def withdraw(self, amount):\n        pass\n\n# Test logic",
+            test_case: {
+                input: "None",
+                output: "Status: Success"
+            }
+        }
     },
     {
-        "topic_name": "Lists",
-        "programs": [
+        id: "py_files",
+        topic_name: "Module 6: File Handling",
+        progress_status: "not_started",
+        concept: {
+            theory: "Python allows reading and writing files. Modes: 'r' (read), 'w' (write), 'a' (append). Use `with open(...)` to ensure files close automatically.",
+            real_life_example: "Writing a diary. You open the book, write today's entry (append), and close it.",
+            syntax: "with open('file.txt', 'w') as f:\n    f.write('Hello')"
+        },
+        example_code: {
+            language: "python",
+            code: "# Writing to a virtual file (simulated)\nprint(\"Writing to data.txt...\")\nprint(\"Reading data.txt: Hello World\")"
+        },
+        practice_questions: [
             {
-                "id": "py_ls1",
-                "title": "List Sum and Average",
-                "definition": "Calculate sum and average of list elements.",
-                "logic": ["Initialize list", "Use sum() function", "Calculate len()", "Average = sum / len", "Print both"],
-                "sampleInput": "[10, 20, 30, 40]",
-                "sampleOutput": "Sum: 100, Avg: 25.0",
-                "initialCode": { "python": "lst = [10, 20, 30, 40]\n# Calc and print..." }
-            },
-            {
-                "id": "py_ls2",
-                "title": "Remove Duplicates",
-                "definition": "Remove duplicate elements from a list.",
-                "logic": ["Read list", "Convert list to set to remove duplicates", "Convert back to list", "Print list"],
-                "sampleInput": "[1, 2, 2, 3, 4, 4]",
-                "sampleOutput": "[1, 2, 3, 4]",
-                "initialCode": { "python": "lst = [1, 2, 2, 3, 4, 4]\n# Remove duplicates..." }
+                id: "py_file1",
+                title: "File Writer",
+                difficulty: "Medium",
+                definition: "Simulate writing a list of names to a file.",
+                initialCode: "names = ['Alice', 'Bob']\n# formatting logic"
             }
-        ]
+        ],
+        challenge: {
+            id: "ch_py_csv",
+            title: "CSV Parser",
+            difficulty: "Hard",
+            definition: "Parse a simple CSV string 'Name,Age\\nAlice,30' into a dictionary format.",
+            initialCode: "csv_data = \"Name,Age\\nAlice,30\\nBob,25\"\n# Parse this string logic",
+            test_case: {
+                input: "None",
+                output: "[{'Name': 'Alice', 'Age': '30'}, {'Name': 'Bob', 'Age': '25'}]"
+            }
+        }
+    },
+    {
+        id: "py_except",
+        topic_name: "Module 7: Exception Handling",
+        progress_status: "not_started",
+        concept: {
+            theory: "Errors crash programs. Exception handling (`try`, `except`, `finally`) lets you handle errors gracefully without stopping execution.",
+            real_life_example: "Safety net. If the acrobat falls (error), the net (except block) catches them so the show continues.",
+            syntax: "try:\n    x = 1/0\nexcept ZeroDivisionError:\n    print('Can not divide by zero')"
+        },
+        example_code: {
+            language: "python",
+            code: "try:\n    num = int(\"not_a_number\")\nexcept ValueError:\n    print(\"Invalid number!\")\nfinally:\n    print(\"Execution done.\")"
+        },
+        practice_questions: [
+            {
+                id: "py_ex1",
+                title: "Safe Division",
+                difficulty: "Easy",
+                definition: "Function divides two numbers and handles zero division.",
+                initialCode: "def divide(a, b):\n    # try-except"
+            }
+        ],
+        challenge: {
+            id: "ch_py_ex",
+            title: "Robust Input",
+            difficulty: "Medium",
+            definition: "Simulate an input loop that keeps asking for an integer until a valid one is provided.",
+            initialCode: "def get_int():\n    # simulation logic\n    pass",
+            test_case: {
+                input: "None",
+                output: "Valid integer received"
+            }
+        }
+    },
+    {
+        id: "py_adv",
+        topic_name: "Module 8: Advanced",
+        progress_status: "not_started",
+        concept: {
+            theory: "Advanced topics include Modules (importing code), Virtual Environments (dependency isolation), and Libraries (NumPy, Pandas, etc.).",
+            real_life_example: "Using pre-made car parts (Libraries) instead of building the engine from scratch.",
+            syntax: "import math\nprint(math.sqrt(16))"
+        },
+        example_code: {
+            language: "python",
+            code: "import math\nimport random\n\nprint(\"Sqrt(16):\", math.sqrt(16))\nprint(\"Random:\", random.randint(1, 100))"
+        },
+        practice_questions: [
+            {
+                id: "py_adv1",
+                title: "Math Module",
+                difficulty: "Easy",
+                definition: "Use math module to calculate factorial and gcd.",
+                initialCode: "import math\n# Logic"
+            }
+        ],
+        challenge: {
+            id: "ch_py_sms",
+            title: "Student Management System",
+            difficulty: "Hard",
+            definition: "Create a Mini Project: Class `SMS` to add student, view students, and delete student using a list of dicts.",
+            initialCode: "class SMS:\n    def __init__(self):\n        self.students = []\n    def add_student(self, name, roll):\n        self.students.append({'name': name, 'roll': roll})\n    # Implement view and delete\n\nsms = SMS()\nsms.add_student('John', 101)\n# verify logic",
+            test_case: {
+                input: "None",
+                output: "Student Added"
+            }
+        }
     }
-    // Truncated for brevity while maintaining coverage.
 ];

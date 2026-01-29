@@ -6,7 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 
-const ChatAssistant = ({ language, onInsertCode }) => {
+const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
         { role: 'ai', content: 'Systems Online. I am your AI Co-Pilot. Ready to assist with code generation and debugging.' }
@@ -62,6 +62,40 @@ const ChatAssistant = ({ language, onInsertCode }) => {
         // Generate a unique ID for this block for copy state tracking (simple index here)
         const blockId = node?.position?.start?.line;
 
+        const handleInsertWrapper = () => {
+            if (codeLang) {
+                // Map common markdown language tags to our internal system identifiers
+                const langMap = {
+                    'py': 'python',
+                    'python': 'python',
+                    'js': 'javascript',
+                    'javascript': 'javascript',
+                    'java': 'java',
+                    'cpp': 'cpp',
+                    'c': 'c',
+                    'cs': 'csharp',
+                    'csharp': 'csharp',
+                    'go': 'go',
+                    'rs': 'rust',
+                    'rust': 'rust',
+                    'php': 'php',
+                    'rb': 'ruby',
+                    'ruby': 'ruby',
+                    'swift': 'swift',
+                    'ts': 'typescript',
+                    'typescript': 'typescript',
+                    'sh': 'bash',
+                    'bash': 'bash'
+                };
+
+                const targetLang = langMap[codeLang.toLowerCase()];
+                if (targetLang && onLanguageChange) {
+                    onLanguageChange(targetLang);
+                }
+            }
+            onInsertCode(codeContent);
+        };
+
         if (!inline && match) {
             return (
                 <div className="relative group my-4 rounded-lg overflow-hidden border border-[#30363d] bg-[#1e1e1e]">
@@ -78,7 +112,7 @@ const ChatAssistant = ({ language, onInsertCode }) => {
                                 {copiedIndex === blockId ? "COPIED" : "COPY"}
                             </button>
                             <button
-                                onClick={() => onInsertCode(codeContent)}
+                                onClick={handleInsertWrapper}
                                 className="flex items-center gap-1 text-[10px] bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan px-2 py-0.5 rounded transition-colors"
                                 title="Insert into Editor"
                             >

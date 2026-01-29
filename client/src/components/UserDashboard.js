@@ -48,21 +48,58 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   const [inputHints, setInputHints] = useState([]);
   const [formValues, setFormValues] = useState({});
 
-  // Handle Incoming State from Syllabus
+  // Handle Persistence & Navigation
   useEffect(() => {
+    // 1. Navigation FROM Syllabus (Intentional switch)
     if (location.state) {
-      if (location.state.language) {
-        setLanguage(location.state.language);
+      const { challengeCode, language, challengeTitle } = location.state;
+
+      if (challengeTitle) {
+        // User explicitly selected a challenge
+        localStorage.setItem('current_active_challenge', challengeTitle);
+
+        // Try to load specific progress for this challenge
+        const savedProgress = localStorage.getItem(`challenge_progress_${challengeTitle}`);
+        if (savedProgress) {
+          setCode(savedProgress);
+        } else if (challengeCode) {
+          setCode(challengeCode);
+        }
+      } else if (challengeCode) {
+        // Just a code snippet without a tracked title
+        setCode(challengeCode);
+        localStorage.removeItem('current_active_challenge');
       }
-      if (location.state.challengeCode) {
-        setCode(location.state.challengeCode);
-      }
-      // Clear state to prevent loop/re-apply on refresh if desired, 
-      // though react-router state persists.
-      // We'll let it persist for now so refresh is stable.
+
+      if (language) setLanguage(language);
     }
-  }, [location.state]);
-  // Local state to track usage immediately without refresh
+    // 2. Navigation FROM elsewhere (e.g. Back button, or clicking 'Dashboard' tab)
+    else {
+      // Restore the EXACT state of the editor from before navigation (Snapshot)
+      const lastSnapshot = localStorage.getItem('editor_snapshot');
+      if (lastSnapshot) {
+        setCode(lastSnapshot);
+      }
+
+      // Also restore the last active challenge title context if available
+      // (This assumes the snapshot belongs to that challenge)
+      // We don't overwrite code here because snapshot is king for visual consistency.
+    }
+  }, [location]);
+
+  // Handle typing in editor
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+
+    // 1. Always save a "Snapshot" of the editor state (for simple navigation storage)
+    localStorage.setItem('editor_snapshot', newCode);
+
+    // 2. If we are working on a specific challenge, save valid progress for THAT challenge
+    const currentChallenge = localStorage.getItem('current_active_challenge');
+    if (currentChallenge) {
+      localStorage.setItem(`challenge_progress_${currentChallenge}`, newCode);
+    }
+  };
   const [localUsageCount, setLocalUsageCount] = useState(user?.githubSyncUsage || 0);
   const [isEditorMaximized, setIsEditorMaximized] = useState(false);
 
@@ -297,10 +334,24 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
     const startTime = Date.now();
     const runId = Date.now();
 
+    // Generate Description (Heuristic: First Comment or Problem Title)
+    let logDescription = "Quick Run";
+    const cleanCode = code.trim();
+
+    // 1. Check for Problem Title from State context (if applicable - currently not persisted in state but good to have)
+    // if (location.state?.challengeTitle) logDescription = location.state.challengeTitle;
+
+    // 2. Extract from First Line Comment
+    const firstLine = cleanCode.split('\n')[0].trim();
+    if (firstLine.startsWith("//") || firstLine.startsWith("#") || firstLine.startsWith("/*")) {
+      logDescription = firstLine.replace(new RegExp("^[/*#]+"), '').trim().substring(0, 30);
+      if (logDescription.length === 30) logDescription += "...";
+    }
+
     try {
       const res = await axios.post(
         "http://localhost:5051/api/compiler/execute",
-        { code, language, input },
+        { code, language, input, description: logDescription },
         { headers: user ? { Authorization: `Bearer ${localStorage.getItem("token")}` } : {} }
       );
 
@@ -320,6 +371,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
       const newLog = {
         id: res.data.historyId || runId, // Use real DB ID if available
         language: language,
+        description: logDescription,
         code: code,
         status: hasError ? 'fail' : verificationStatus,
         timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
@@ -719,7 +771,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
           <ReactorCore
             code={code}
             language={language}
-            onChange={setCode}
+            onChange={handleCodeChange}
             isError={isError}
             isThinking={isThinking}
             ignitionHover={ignitionHover}
@@ -766,7 +818,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
 
 
         {/* AI CHAT ASSISTANT OVERLAY */}
-        <ChatAssistant language={language} onInsertCode={handleInsertCode} />
+        <ChatAssistant language={language} onInsertCode={handleInsertCode} onLanguageChange={handleLanguageChange} />
 
       </div>
     </div>
