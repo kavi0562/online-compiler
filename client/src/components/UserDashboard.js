@@ -99,28 +99,58 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
 
     const hints = [];
 
-    // Python Input Pattern: input("Enter prompt: ")
-    const pythonRegex = /input\s*\(\s*["']([^"']+)["']\s*\)/g;
+    const strategies = {
+      python: [/input\s*\(\s*["']([^"']+)["']\s*\)/g],
+      c: [/printf\s*\(\s*["']([^"']+)["']\s*\)/g],
+      cpp: [
+        /cout\s*<<\s*["']([^"']+)["']/g,
+        /printf\s*\(\s*["']([^"']+)["']\s*\)/g
+      ],
+      java: [/System\.out\.print(?:ln)?\s*\(\s*["']([^"']+)["']\s*\)/g],
+      csharp: [/Console\.Write(?:Line)?\s*\(\s*["']([^"']+)["']\s*\)/g],
+      go: [/fmt\.Print(?:ln|f)?\s*\(\s*["']([^"']+)["']\s*\)/g],
+      rust: [/println!\s*\(\s*["']([^"']+)["']\s*\)/g],
+      javascript: [
+        /prompt\s*\(\s*["']([^"']+)["']\s*\)/g,
+        /console\.log\s*\(\s*["']([^"']+)["']\s*\)/g
+      ]
+    };
 
-    // Java Scanner Pattern (simple heuristic)
-    const printRegex = /System\.out\.print(?:ln)?\s*\(\s*["']([^"']+)["']\s*\)/g;
+    let langKey = language.toLowerCase();
+    if (langKey === 'py') langKey = 'python';
+    if (langKey === 'js') langKey = 'javascript';
+    if (langKey === 'cs') langKey = 'csharp';
+    if (langKey === 'rs') langKey = 'rust';
 
-    let match;
-    if (language === 'python' || language === 'py') {
-      while ((match = pythonRegex.exec(code)) !== null) {
-        hints.push(match[1]);
-      }
-    } else if (language === 'java' || language === 'cpp' || language === 'c') {
-      while ((match = printRegex.exec(code)) !== null) {
-        if (match[1].trim().endsWith(':') || match[1].trim().endsWith('?') || match[1].toLowerCase().includes('enter')) {
-          hints.push(match[1]);
+    const activeRegexes = strategies[langKey] || [];
+
+    for (const regex of activeRegexes) {
+      let match;
+      regex.lastIndex = 0; // Reset for global regex
+      while ((match = regex.exec(code)) !== null) {
+        const captured = match[1].trim();
+
+        // FILTER: Only keep if it looks like a prompt
+        if (langKey === 'python' && match[0].includes('input')) {
+          hints.push(captured);
+          continue;
+        }
+
+        const isQuestion = /:$/.test(captured) || /\?$/.test(captured) || />$/.test(captured);
+        const hasKeywords = /enter|input|type|specify|provide|choose/i.test(captured);
+
+        if (isQuestion || hasKeywords) {
+          hints.push(captured);
         }
       }
     }
 
+    // Deduplicate hints
+    const uniqueHints = [...new Set(hints)];
+
     // Only update if changed to prevent form reset loop
-    if (JSON.stringify(hints) !== JSON.stringify(inputHints)) {
-      setInputHints(hints);
+    if (JSON.stringify(uniqueHints) !== JSON.stringify(inputHints)) {
+      setInputHints(uniqueHints);
       setFormValues({}); // Reset form when structure changes
       setInput("");      // Reset raw input
     }
@@ -283,35 +313,8 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
         setIsError(true);
         hasError = true;
       }
-      // OUTPUT VALIDATION LOGIC
-      let finalOutput = result;
-      let verificationStatus = 'success'; // default to success if no validation needed
-
-      if (location.state?.expectedOutput) {
-        const normalize = (str) => str.toString().trim().replace(/\r\n/g, '\n');
-        const expected = normalize(location.state.expectedOutput);
-        const actual = normalize(result);
-
-        if (actual === expected) {
-          finalOutput += `\n\n// ✅ CHALLENGE COMPLETED! \n// STATUS: VERIFIED`;
-
-          // Save Completion
-          if (location.state.problemId) {
-            const completed = JSON.parse(localStorage.getItem('completed_problems')) || [];
-            if (!completed.includes(location.state.problemId)) {
-              completed.push(location.state.problemId);
-              localStorage.setItem('completed_problems', JSON.stringify(completed));
-            }
-          }
-        } else {
-          finalOutput += `\n\n// ❌ INCORRECT OUTPUT\n// EXPECTED: ${expected}\n// GOT:      ${actual}`;
-          verificationStatus = 'fail';
-          // Even if execution was successful (no code error), logic is wrong
-          setIsError(true);
-        }
-      }
-
-      setOutput(finalOutput);
+      setOutput(result);
+      let verificationStatus = 'success';
 
       // Add to History
       const newLog = {
@@ -631,11 +634,11 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
                     <Download size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
                   </button>
                   {/* Tooltip */}
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 
-                                  bg-neon-cyan/90 text-black text-[9px] font-bold tracking-widest rounded
-                                  transform opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 
+                                  bg-neon-cyan text-black text-[10px] font-bold tracking-widest rounded
+                                  transform opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg shadow-neon-cyan/20">
                     DOWNLOAD
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan/90"></div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan"></div>
                   </div>
                 </div>
 
@@ -654,11 +657,11 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
                     <Share2 size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
                   </button>
                   {/* Tooltip */}
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 
-                                  bg-neon-cyan/90 text-black text-[9px] font-bold tracking-widest rounded
-                                  transform opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 
+                                  bg-neon-cyan text-black text-[10px] font-bold tracking-widest rounded
+                                  transform opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg shadow-neon-cyan/20">
                     SHARE
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan/90"></div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan"></div>
                   </div>
                 </div>
               </div>

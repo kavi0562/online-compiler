@@ -2,7 +2,9 @@ const express = require("express");
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const CodeHistory = require("../models/CodeHistory");
-const { executeDocker } = require("../utils/dockerSandbox");
+const { executeLocal } = require("../utils/localExecutor");
+
+
 const { logEvent, isBlocked } = require("../utils/securityLogger");
 const router = express.Router();
 
@@ -244,26 +246,7 @@ router.get("/languages", (req, res) => {
   })));
 });
 
-const getFileName = (language) => {
-  switch (language) {
-    case 'java': return 'Main.java';
-    case 'csharp': return 'Program.cs';
-    case 'go': return 'main.go';
-    case 'rust': return 'main.rs';
-    case 'c++': return 'source.cpp';
-    case 'c': return 'source.c';
-    case 'python': return 'main.py';
-    case 'javascript': return 'main.js';
-    case 'typescript': return 'main.ts';
-    case 'php': return 'main.php';
-    case 'ruby': return 'main.rb';
-    case 'swift': return 'main.swift';
-    case 'kotlin': return 'Main.kt';
-    case 'scala': return 'Main.scala';
-    case 'bash': return 'script.sh';
-    default: return 'source';
-  }
-};
+
 
 router.post("/execute", async (req, res) => {
   // Logic remains the same, just renamed endpoint to match frontend
@@ -299,8 +282,8 @@ router.post("/execute", async (req, res) => {
     // SWITCH: Use Local Docker Sandbox instead of Piston
     // const response = await axios.post(PISTON_API_URL, ...); 
 
-    // Execute via Docker
-    const result = await executeDocker(language, code, input || "");
+    // Execute Locally
+    const result = await executeLocal(language, code, input || "");
 
     // LOG SUCCESS/FAIL
     logEvent('info', {

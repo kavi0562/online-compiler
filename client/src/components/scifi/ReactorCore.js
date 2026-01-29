@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Editor from "@monaco-editor/react";
-import { Hexagon, Maximize2, Minimize2 } from 'lucide-react';
+import { Hexagon, Maximize2, Minimize2, Trash2, Copy, Check } from 'lucide-react';
 
 const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHover, isMaximized, onToggleMaximize }) => {
     const editorRef = useRef(null);
     const containerRef = useRef(null);
+    const [isCopied, setIsCopied] = useState(false);
 
     const handleEditorDidMount = (editor, monaco) => {
         editorRef.current = editor;
@@ -12,6 +13,23 @@ const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHo
         setTimeout(() => {
             if (editor) editor.layout();
         }, 100);
+    };
+
+    const handleClear = () => {
+        onChange('');
+        if (editorRef.current) {
+            editorRef.current.focus();
+        }
+    };
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(code);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy keys', err);
+        }
     };
 
     // Robust Layout Trigger using ResizeObserver
@@ -75,6 +93,22 @@ const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHo
                     <div className="flex items-center gap-4">
                         {isThinking && <span className="text-xs text-neon-magenta animate-flicker">PROCESSING...</span>}
                         {isError && <span className="text-xs text-neon-red animate-flicker">CRITICAL INSTABILITY</span>}
+
+                        <button
+                            onClick={handleCopy}
+                            className="text-gray-400 hover:text-neon-cyan transition-colors p-1 rounded hover:bg-white/10"
+                            title="Copy Code"
+                        >
+                            {isCopied ? <Check size={16} className="text-neon-green" /> : <Copy size={16} />}
+                        </button>
+
+                        <button
+                            onClick={handleClear}
+                            className="text-gray-400 hover:text-neon-red transition-colors p-1 rounded hover:bg-white/10"
+                            title="Clear Code"
+                        >
+                            <Trash2 size={16} />
+                        </button>
 
                         <button
                             onClick={onToggleMaximize}
