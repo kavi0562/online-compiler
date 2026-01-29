@@ -46,7 +46,7 @@ const ControlDeck = ({ onRun, onClear, isThinking, onHoverChange }) => {
                     ) : (
                         <>
                             <Play size={18} fill="currentColor" />
-                            <span>IGNITE</span>
+                            <span>IGNITE / RUN</span>
                         </>
                     )}
                 </motion.button>

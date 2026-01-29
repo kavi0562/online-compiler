@@ -1,233 +1,58 @@
-🔥 CORRECT SERVER app.js RUNNING
-[dotenv@17.2.3] injecting env (3) from server/.env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
-🔥 Firebase Admin Initialized with Service Account
-MONGO_URI = mongodb+srv://admin:Kavishik85@kavi.oys8d01.mongodb.net/compiler
-🚀 Server running on port 5051
-✅ MongoDB Connected Successfully
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/payment/upgrade
-🔔 INCOMING_REQUEST: POST /api/payment/upgrade
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/share
-🔔 INCOMING_REQUEST: POST /api/share
-🔔 INCOMING_REQUEST: OPTIONS /api/users/sync
-🔔 INCOMING_REQUEST: POST /api/users/sync
->> MERGING_ACCOUNT: Found existing user by email: n.kavishiksuryavarma@gmail.com
-DATABASE_SAVE_SUCCESS: n.kavishiksuryavarma@gmail.com | Role: admin
-🔔 INCOMING_REQUEST: GET /api/status
-🔔 INCOMING_REQUEST: GET /api/status
-🔔 INCOMING_REQUEST: OPTIONS /api/admin/users
-🔔 INCOMING_REQUEST: OPTIONS /api/admin/users
-🔔 INCOMING_REQUEST: GET /api/admin/users
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: n.kavishiksuryavarma@gmail.com
->> 🛡️ HARDCODED_ADMIN_DETECTED_IN_MIDDLEWARE
->> ADMIN_CHECK: User=n.kavishiksuryavarma@gmail.com, Role=admin
-Fetching users for Admin...
-🔔 INCOMING_REQUEST: GET /api/admin/users
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: n.kavishiksuryavarma@gmail.com
->> 🛡️ HARDCODED_ADMIN_DETECTED_IN_MIDDLEWARE
->> ADMIN_CHECK: User=n.kavishiksuryavarma@gmail.com, Role=admin
-Fetching users for Admin...
-🔔 INCOMING_REQUEST: OPTIONS /api/ai/chat
-🔔 INCOMING_REQUEST: POST /api/ai/chat
->> AI_REQUEST: [python] "adding two elements..."
-🔔 INCOMING_REQUEST: OPTIONS /api/compiler/execute
-🔔 INCOMING_REQUEST: POST /api/compiler/execute
-Failed to save history: invalid algorithm
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-🔔 INCOMING_REQUEST: OPTIONS /api/ai/chat
-🔔 INCOMING_REQUEST: POST /api/ai/chat
->> AI_REQUEST: [python] "adding two elements..."
-🔔 INCOMING_REQUEST: OPTIONS /api/compiler/execute
-🔔 INCOMING_REQUEST: POST /api/compiler/execute
-Failed to save history: invalid algorithm
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/github/push
-🔔 INCOMING_REQUEST: POST /api/github/push
---- MIDDLEWARE_CHECK (HYBRID) ---
-✅ FIREBASE_USER_VERIFIED: undefined
-🔔 GITHUB_PUSH_REQUEST_RECEIVED
-🔥 GLOBAL_CRASH: CastError: Cast to ObjectId failed for value "DOEvUe8YKqP5pB3DAZOtG3kFiDE3" (type string) at path "_id" for model "User"
-    at SchemaObjectId.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
-    at SchemaType.applySetters (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1280:12)
-    at SchemaType.castForQuery (/Users/kavi/mern-project/server/node_modules/mongoose/lib/schemaType.js:1706:17)
-    at cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/cast.js:386:32)
-    at Query.cast (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:5025:12)
-    at Query._castConditions (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2374:10)
-    at model.Query._findOne (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:2704:8)
-    at model.Query.exec (/Users/kavi/mern-project/server/node_modules/mongoose/lib/query.js:4637:80)
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async /Users/kavi/mern-project/server/routes/github.js:16:22
-🔔 INCOMING_REQUEST: OPTIONS /api/users/sync
-🔔 INCOMING_REQUEST: POST /api/users/sync
->> CREATING_NEW_USER: DOEvUe8YKqP5pB3DAZOtG3kFiDE3@no-email.com
-DATABASE_SAVE_SUCCESS: DOEvUe8YKqP5pB3DAZOtG3kFiDE3@no-email.com | Role: user
-🔔 INCOMING_REQUEST: OPTIONS /api/ai/chat
-🔔 INCOMING_REQUEST: POST /api/ai/chat
->> AI_REQUEST: [python] "cewcw..."
-{"timestamp":"2026-01-24T04:38:54.973Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":3.008,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-24T04:39:12.841Z","level":"SECURITY","action":"BLOCKED_KEYWORD","language":"python","pattern":"/import\\s+os/","ip":"::1"}
-{"timestamp":"2026-01-24T04:40:36.803Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.302,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-25T14:27:33.161Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":3.136,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-27T04:28:24.150Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":1.818,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T05:37:19.327Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":1.854,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-27T06:01:40.264Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":2.491,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:27:45.537Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":2.493,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:28:02.144Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.268,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-27T06:28:14.404Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.176,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-27T06:28:25.041Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.183,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-27T06:30:32.462Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.299,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:31:01.891Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.297,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:31:07.486Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.197,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:31:11.237Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.183,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:31:21.198Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.175,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:31:34.953Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.28,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:31:51.267Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.243,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:32:07.116Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.176,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:32:23.733Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.178,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:32:34.020Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.181,"isError":true,"ip":"::1"}
-{"timestamp":"2026-01-27T06:32:41.956Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.204,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:32:52.132Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.225,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:33:18.562Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.192,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:33:28.339Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.168,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:33:38.419Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.181,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:33:41.552Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.185,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:33:43.832Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.18,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:34:08.896Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.243,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:34:20.308Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.187,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:34:56.492Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.274,"isError":false,"ip":"::1"}
-{"timestamp":"2026-01-27T06:35:10.641Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.189,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T13:39:22.386Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.423,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T13:39:57.754Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":3.077,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T13:41:28.232Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":2.558,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T13:47:05.962Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":12.41,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T13:47:18.752Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.127,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T13:51:43.889Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.18,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T13:53:49.832Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":2.982,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T13:54:24.116Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.5,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T14:26:03.693Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"python","duration":0.997,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T14:26:10.342Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.58,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T14:32:47.043Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.898,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T14:42:09.841Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.18,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:42:59.105Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.047,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:43:32.629Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.055,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:43:51.805Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.065,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:45:38.748Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.074,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:45:58.408Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.051,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:46:05.964Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.058,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:46:17.135Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c","duration":0.877,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T14:51:52.856Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.367,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:52:29.199Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.261,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:53:16.951Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.245,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:53:31.269Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.328,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:54:46.695Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.274,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:54:58.540Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.317,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:55:25.219Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.265,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:57:52.722Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.305,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:58:45.226Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.258,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T14:58:50.168Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.252,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T15:09:04.499Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.384,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T15:09:24.525Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.291,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T15:15:59.512Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.357,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T15:55:16.775Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.342,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T15:58:13.838Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.355,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:05:14.953Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.356,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:20:22.270Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.362,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:21:24.472Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.429,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T16:22:05.691Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.346,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:39:02.666Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.365,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:47:32.178Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.337,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:52:41.188Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.451,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:54:33.844Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.317,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T16:54:53.551Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.295,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T17:01:39.195Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.313,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T17:02:21.495Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.44,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:02:48.160Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.352,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T17:17:33.835Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.468,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:18:05.761Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.44,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:18:32.887Z","level":"SECURITY","action":"BLOCKED_KEYWORD","language":"java","pattern":"/java\\.nio/","ip":"::1"}
+{"timestamp":"2026-01-28T17:19:39.437Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.415,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:22:13.250Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.46,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:25:31.153Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"java","duration":0.429,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:26:18.171Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"c++","duration":0.383,"isError":true,"ip":"::1"}
+{"timestamp":"2026-01-28T17:27:23.532Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"cpp","duration":0.628,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:27:36.945Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"cpp","duration":0.428,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:28:58.760Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"cpp","duration":0.492,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:30:48.194Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"ruby","duration":0.125,"isError":false,"ip":"::1"}
+{"timestamp":"2026-01-28T17:32:03.046Z","level":"INFO","action":"EXECUTION_COMPLETE","language":"ruby","duration":0.08,"isError":false,"ip":"::1"}
