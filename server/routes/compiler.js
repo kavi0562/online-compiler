@@ -168,6 +168,7 @@ router.get("/history", async (req, res) => {
     const formattedHistory = history.map(log => ({
       id: log._id,
       language: log.language,
+      description: log.description || "Quick Run",
       code: log.code,
       status: (log.output && (log.output.includes("Error") || log.output.includes("Exception"))) ? 'fail' : 'success',
       timestamp: new Date(log.timestamp).toLocaleTimeString('en-US', { hour12: false }),
@@ -306,6 +307,7 @@ router.post("/execute", async (req, res) => {
             userId: decoded.id,
             language,
             code,
+            description: req.body.description || "Quick Run",
             output: result.output || "⚠️ No output"
           });
           historyId = savedLog._id;
