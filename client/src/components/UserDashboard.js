@@ -628,17 +628,17 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
                              rounded-lg backdrop-blur-md transition-all duration-300 
                              hover:bg-neon-cyan/10 hover:border-neon-cyan/60
                              hover:shadow-[0_0_10px_rgba(0,243,255,0.2)]
-                             group z-10"
+                             group z-10 peer"
                   >
                     <span className="absolute inset-0 rounded-lg border border-neon-cyan opacity-0 group-hover:opacity-20 transition-opacity"></span>
                     <Download size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
                   </button>
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 
-                                  bg-neon-cyan text-black text-[10px] font-bold tracking-widest rounded
-                                  transform opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg shadow-neon-cyan/20">
-                    DOWNLOAD
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan"></div>
+                                  bg-white text-black text-[10px] font-bold tracking-widest rounded
+                                  transform opacity-0 translate-y-2 peer-hover:opacity-100 peer-hover:translate-y-0 transition-all duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg shadow-white/20">
+                    DOWNLOAD CODE
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                   </div>
                 </div>
 
@@ -651,17 +651,17 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
                              rounded-lg backdrop-blur-md transition-all duration-300 
                              hover:bg-neon-cyan/10 hover:border-neon-cyan/60
                              hover:shadow-[0_0_10px_rgba(0,243,255,0.2)]
-                             group z-10"
+                             group z-10 peer"
                   >
                     <span className="absolute inset-0 rounded-lg border border-neon-cyan opacity-0 group-hover:opacity-20 transition-opacity"></span>
                     <Share2 size={15} className="text-neon-cyan/80 group-hover:text-neon-cyan transition-colors" />
                   </button>
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 
-                                  bg-neon-cyan text-black text-[10px] font-bold tracking-widest rounded
-                                  transform opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg shadow-neon-cyan/20">
-                    SHARE
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neon-cyan"></div>
+                                  bg-white text-black text-[10px] font-bold tracking-widest rounded
+                                  transform opacity-0 translate-y-2 peer-hover:opacity-100 peer-hover:translate-y-0 transition-all duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg shadow-white/20">
+                    SHARE CODE
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                   </div>
                 </div>
               </div>
