@@ -8,7 +8,7 @@ const BottomNav = () => {
     // However, for "Navigation", we usually route.
     // The prompt asked for "icons for 'Editor', 'Syllabus', and 'Chatbot'".
     // I will link Chatbot to #chat for now or use a button if I could access the overlay state.
-    // Given the constraints and separate components, I'll make it a visual link that 
+    // Given the constraints and separate compo4nents, I'll make it a visual link that 
     // effectively might not "open" the overlay unless we lift state.
     // BUT optimization: purely for navigation as requested.
 
