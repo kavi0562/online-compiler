@@ -138,6 +138,8 @@ app.use((err, req, res, next) => {
 ======================= */
 // GLOBAL CONFIG: Port 5051
 const PORT = process.env.PORT || 5051;
-app.listen(PORT, () => {
+
+app.listen(PORT, "127.0.0.1", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { MessageSquare, X, Cpu, Zap, ChevronRight, Terminal, Copy, Check } from 'lucide-react';
+import { MessageSquare, X, Cpu, Zap, ChevronRight, Terminal, Copy, Check, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -16,6 +16,13 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
     const [copiedIndex, setCopiedIndex] = useState(null);
     const messagesEndRef = useRef(null);
 
+    // VOICE STATE
+    const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [voice, setVoice] = useState(null);
+    const synthesisRef = useRef(window.speechSynthesis);
+    const recognitionRef = useRef(null);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -23,6 +30,84 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isOpen]);
+
+    // --- TTS: LOAD VOICES ---
+    useEffect(() => {
+        const loadVoices = () => {
+            const voices = synthesisRef.current.getVoices();
+            // Try to find a "Google US English" or similar nice voice
+            const preferredVoice = voices.find(v => v.name.includes("Google US English")) ||
+                voices.find(v => v.name.includes("Zira")) ||
+                voices.find(v => v.lang.startsWith("en-US"));
+            setVoice(preferredVoice || voices[0]);
+        };
+
+        loadVoices();
+        if (synthesisRef.current.onvoiceschanged !== undefined) {
+            synthesisRef.current.onvoiceschanged = loadVoices;
+        }
+    }, []);
+
+    // --- TTS: SPEAK FUNCTION ---
+    const speak = useCallback((text) => {
+        if (!isVoiceEnabled || !synthesisRef.current) return;
+
+        // Cancel any current speaking
+        synthesisRef.current.cancel();
+
+        // Strip markdown symbols for smoother speech
+        const cleanText = text.replace(/[*`#_]/g, '');
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        if (voice) utterance.voice = voice;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        synthesisRef.current.speak(utterance);
+    }, [isVoiceEnabled, voice]);
+
+    // --- STT: SETUP ---
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => setIsListening(true);
+            recognition.onend = () => setIsListening(false);
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                setInput(prev => prev + (prev ? ' ' : '') + transcript);
+            };
+
+            recognitionRef.current = recognition;
+        }
+    }, []);
+
+    const toggleListening = () => {
+        if (!recognitionRef.current) {
+            alert("Speech recognition not supported in this browser.");
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current.stop();
+        } else {
+            recognitionRef.current.start();
+        }
+    };
+
+    // --- AUTO-SPEAK NEW AI MESSAGES ---
+    useEffect(() => {
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg && lastMsg.role === 'ai' && isOpen) {
+            speak(lastMsg.content);
+        }
+    }, [messages, isOpen, speak]);
+
 
     const handleSend = async () => {
         if (!input.trim()) return;
@@ -154,9 +239,20 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
                             <Cpu size={18} className="text-neon-cyan animate-pulse" />
                             <span className="text-sm font-bold text-white tracking-widest">AI_CO_PILOT</span>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition-colors">
-                            <X size={18} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {/* VOICE TOGGLE */}
+                            <button
+                                onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                                className={`p-1.5 rounded-lg transition-colors ${isVoiceEnabled ? 'text-neon-cyan bg-neon-cyan/10' : 'text-gray-500 hover:text-gray-300'}`}
+                                title={isVoiceEnabled ? "Mute Voice" : "Enable Voice"}
+                            >
+                                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                            </button>
+
+                            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={18} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Messages */}
@@ -194,21 +290,35 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
 
                     {/* Input */}
                     <div className="p-3 border-t border-[#30363d] bg-[#050510]/50 flex-shrink-0">
-                        <div className="relative flex items-center">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder="Execute command..."
-                                className="w-full bg-[#0a0a1a] border border-[#30363d] rounded-lg pl-3 pr-10 py-2 text-sm text-gray-300 focus:border-neon-cyan focus:outline-none"
-                            />
+                        <div className="relative flex items-center gap-2">
+                            {/* MICROPHONE BUTTON */}
                             <button
-                                onClick={handleSend}
-                                className="absolute right-2 p-1 bg-neon-cyan/20 rounded hover:bg-neon-cyan/40 text-neon-cyan transition-colors"
+                                onClick={toggleListening}
+                                className={`p-2 rounded-lg transition-all ${isListening
+                                    ? 'bg-red-500/20 text-red-500 animate-pulse border border-red-500/50'
+                                    : 'bg-neon-cyan/5 text-neon-cyan hover:bg-neon-cyan/10 border border-transparent'
+                                    }`}
+                                title="Voice Input"
                             >
-                                <ChevronRight size={16} />
+                                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
                             </button>
+
+                            <div className="relative flex-1 flex items-center">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                    placeholder={isListening ? "Listening..." : "Execute command..."}
+                                    className="w-full bg-[#0a0a1a] border border-[#30363d] rounded-lg pl-3 pr-10 py-2 text-sm text-gray-300 focus:border-neon-cyan focus:outline-none"
+                                />
+                                <button
+                                    onClick={handleSend}
+                                    className="absolute right-2 p-1 bg-neon-cyan/20 rounded hover:bg-neon-cyan/40 text-neon-cyan transition-colors"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
