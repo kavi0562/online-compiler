@@ -5,13 +5,16 @@ const os = require('os');
 const crypto = require('crypto');
 
 // --- CONFIGURATION ---
-const TEMP_DIR_BASE = path.join(os.tmpdir(), 'compiler-docker');
+// --- CONFIGURATION ---
+// USE LOCAL TEMP DIR to avoid Docker File Sharing issues on Mac
+const TEMP_DIR_BASE = path.join(__dirname, '../temp');
 const DOCKER_IMAGE = "ncompiler-sandbox";
 
 // Ensure base temp directory exists
 (async () => {
     try {
         await fs.mkdir(TEMP_DIR_BASE, { recursive: true });
+        await fs.chmod(TEMP_DIR_BASE, 0o777); // Ensure global write access
     } catch (e) {
         console.error("Failed to initialize temp dir:", e);
     }
@@ -90,21 +93,23 @@ const executeDocker = async (langInput, code, input) => {
     }
 
     const runId = crypto.randomUUID();
-    const hostDir = path.join(TEMP_DIR_BASE, runId);
+    // USE ABSOLUTE PATH RESOLUTION
+    const hostDir = path.resolve(TEMP_DIR_BASE, runId);
     const startTime = Date.now();
 
     try {
         // 2. Setup Host Directory
         await fs.mkdir(hostDir, { recursive: true });
+        await fs.chmod(hostDir, 0o777);
 
         // Write Code File
         const filePath = path.join(hostDir, config.fileName);
         await fs.writeFile(filePath, finalCode);
+        await fs.chmod(filePath, 0o777);
 
         // Prepare Docker Command
-        // Flags: --rm (auto remove), -i (interactive stdin), --network none (security)
-        // Limits: --cpus 0.5, --memory 256m
-        // Volume: hostDir:/app
+        // DEBUG MODE: Run 'ls -la /app' first to PROVE file existence
+        // We override entrypoint to /bin/bash to chain commands
 
         const dockerCmd = `docker run --rm -i \
             --name ${runId} \
@@ -115,12 +120,12 @@ const executeDocker = async (langInput, code, input) => {
             ${DOCKER_IMAGE} \
             ${language} ${config.fileName}`;
 
-        // 3. Execution (with Node-level Timeout for safety)
-        const EXECUTION_TIMEOUT = 3000; // 3 Seconds
+        // 3. Execution
+        const EXECUTION_TIMEOUT = 3000;
 
         return new Promise((resolve) => {
             const child = exec(dockerCmd, {
-                timeout: EXECUTION_TIMEOUT + 500, // Slightly longer than internal limit to catch hangs
+                timeout: EXECUTION_TIMEOUT + 500,
                 killSignal: 'SIGKILL'
             }, async (error, stdout, stderr) => {
                 const duration = (Date.now() - startTime) / 1000;
@@ -128,7 +133,6 @@ const executeDocker = async (langInput, code, input) => {
                 // Cleanup Host Files
                 try {
                     await fs.rm(hostDir, { recursive: true, force: true });
-                    // Also force remove container just in case --rm failed or timeout hit
                     if (error && error.killed) {
                         exec(`docker rm -f ${runId}`, () => { });
                     }
@@ -136,26 +140,16 @@ const executeDocker = async (langInput, code, input) => {
 
                 const output = (stdout || "") + (stderr || "");
 
-                // Handle Timeouts specially
                 if (error && error.killed) {
                     resolve({
                         output: "⏱️ Execution Timed Out (Limit: 3s)",
                         isError: true,
                         duration
                     });
-                    return;
-                }
-
-                if (error) {
-                    resolve({
-                        output: output || error.message,
-                        isError: true,
-                        duration
-                    });
                 } else {
                     resolve({
                         output: output,
-                        isError: false,
+                        isError: !!error,
                         duration
                     });
                 }
@@ -166,7 +160,7 @@ const executeDocker = async (langInput, code, input) => {
                 child.stdin.write(input);
                 child.stdin.end();
             } else {
-                child.stdin.end(); // Important to close stdin if no input, else some reads hang
+                child.stdin.end();
             }
         });
 

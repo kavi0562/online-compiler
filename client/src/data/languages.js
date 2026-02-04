@@ -1,11 +1,11 @@
 export const LANGUAGES = [
     { key: "python", name: "Python", version: "3.10.0" },
     { key: "c", name: "C", version: "10.2.0" },
-    { key: "cpp", name: "Cpp", version: "10.2.0" },
+    { key: "cpp", name: "C++", version: "10.2.0" },
     { key: "java", name: "Java", version: "15.0.2" },
     { key: "javascript", name: "Javascript", version: "18.15.0" },
     { key: "typescript", name: "Typescript", version: "5.0.3" },
-    { key: "c++", name: "C++", version: "10.2.0" },
+
     { key: "csharp", name: "Csharp", version: "6.12.0" },
     { key: "go", name: "Go", version: "1.16.2" },
     { key: "rust", name: "Rust", version: "1.68.2" },

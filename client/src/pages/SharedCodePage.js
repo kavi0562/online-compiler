@@ -15,7 +15,7 @@ const SharedCodePage = () => {
     useEffect(() => {
         const fetchCode = async () => {
             try {
-                const res = await axios.get(`http://localhost:5051/api/share/${id}`);
+                const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/share/${id}`);
                 setCode(res.data.sourceCode);
                 setLoading(false);
             } catch (err) {

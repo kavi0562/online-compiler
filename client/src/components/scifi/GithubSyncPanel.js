@@ -17,8 +17,8 @@ const GithubSyncPanel = ({
     const [isUplinking, setIsUplinking] = useState(false);
 
     const isAdmin = userRole === 'admin';
-    const isTrialExpired = subscriptionPlan === 'free' && usageCount >= 3;
-    const isDisabled = isUplinking || (!isAdmin && isTrialExpired) || !isLinked;
+
+    const isDisabled = isUplinking || !isLinked; // Removed trial expiry check
 
     const handleUplink = async () => {
         if (!repo || !message) return;
@@ -40,11 +40,12 @@ const GithubSyncPanel = ({
                     <span className="text-[10px] font-bold tracking-widest text-neon-cyan">
                         GITHUB SYNC
                     </span>
-                    {!isAdmin && (subscriptionPlan === 'free') && (
+                    {/* Trial Badge Removed */}
+                    {/* {!isAdmin && (subscriptionPlan === 'free') && (
                         <span className={`ml-2 px-1.5 py-0.5 text-[8px] border rounded font-mono ${usageCount >= 3 ? 'bg-red-500/10 text-red-500 border-red-500/50' : 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/50'}`}>
                             {usageCount >= 3 ? "TRIAL EXPIRED" : `TRIAL: ${usageCount}/3`}
                         </span>
-                    )}
+                    )} */}
                     {isAdmin && (
                         <span className="ml-2 px-1.5 py-0.5 text-[8px] border rounded font-mono bg-neon-magenta/10 text-neon-magenta border-neon-magenta/50">
                             ADMIN_UNLIMITED

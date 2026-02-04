@@ -5,7 +5,7 @@ shift
 
 case $LANG in
   python|python3)
-    timeout 3 python3 "$@"
+    timeout 3 python3 -u "$@"
     ;;
   c)
     gcc "$@" -o program && timeout 3 ./program
@@ -16,7 +16,7 @@ case $LANG in
   java)
     javac "$@" && timeout 3 java Main
     ;;
-  js|node)
+  js|node|javascript)
     timeout 3 node "$@"
     ;;
   *)

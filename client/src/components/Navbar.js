@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, ShieldAlert, Menu, X, LayoutDashboard, BookOpen, LogIn, CreditCard } from "lucide-react";
+import { LogOut, ShieldAlert, Menu, X, LayoutDashboard, BookOpen, LogIn } from "lucide-react";
 import ReactorLogo from "./scifi/ReactorLogo";
 import { Link, NavLink } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -51,8 +51,8 @@ function Navbar({ user, role, onLogout }) {
           {user && [
             { name: 'DASHBOARD', path: '/', icon: <LayoutDashboard size={16} /> },
             { name: 'SYLLABUS', path: '/syllabus', icon: <BookOpen size={16} /> },
-            // Only show Pricing for non-admins
-            ...(!isAdmin ? [{ name: 'PRICING', path: '/pricing', icon: <CreditCard size={16} /> }] : [])
+            // PRICING LINK REMOVED
+            // ...(!isAdmin ? [{ name: 'PRICING', path: '/pricing', icon: <CreditCard size={16} /> }] : [])
           ].map((link) => (
             <NavLink
               key={link.name}

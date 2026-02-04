@@ -13,7 +13,7 @@ function TimelineSidebar({ onSelect, refreshTrigger }) {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const res = await axios.get("http://localhost:5051/api/history?limit=10", {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/history?limit=10`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistory(res.data);
@@ -62,9 +62,9 @@ function TimelineSidebar({ onSelect, refreshTrigger }) {
                     </div>
                     <div style={{
                         fontSize: "12px",
-                        color: item.output.includes("Error") ? "#da3633" : "#238636"
+                        color: (item.output || "").includes("Error") ? "#da3633" : "#238636"
                     }}>
-                        {item.output.includes("Error") ? "❌ Error" : "✅ Success"}
+                        {(item.output || "").includes("Error") ? "❌ Error" : "✅ Success"}
                     </div>
                 </div>
             ))}
