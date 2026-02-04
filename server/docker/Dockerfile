@@ -6,11 +6,22 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Update and install required languages and tools
 RUN apt-get update && apt-get install -y \
     python3 \
+    python3-pip \
     gcc \
     g++ \
     openjdk-17-jdk \
     nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Common Python Libraries
+RUN pip3 install --no-cache-dir \
+    numpy \
+    pandas \
+    scipy \
+    scikit-learn \
+    matplotlib \
+    requests \
+    beautifulsoup4
 
 # Create a non-root user 'sandbox' for safety
 RUN useradd -m -s /bin/bash sandbox

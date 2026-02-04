@@ -57,8 +57,8 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 // MIDDLEWARE ORDER: Body Parsers FIRST
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(helmet({
   crossOriginOpenerPolicy: false, // COMPLETELY DISABLE for Google Auth Popup
   crossOriginResourcePolicy: false, // COMPLETELY DISABLE for Piston/External Resources
@@ -69,13 +69,12 @@ app.use(helmet({
    RATE LIMITING
 ======================= */
 const globalLimiter = rateLimit({
-  windowMs: 1000, // 1 second
-  max: 5,         // Max 5 requests per second per IP
-  message: {
-    message: "Too many requests. Please slow down."
-  }
+  windowMs: 1000,
+  max: 50   // 🔥 important
 });
-app.use(globalLimiter);
+
+app.use("/api/auth", globalLimiter);
+
 
 /* =======================
    CRITICAL ROUTES (INLINED OR IMPORTED)
@@ -102,7 +101,7 @@ app.use("/api/ai", require("./routes/ai"));
 // Better: Mount it, and inside compiler.js ensure paths match.
 app.use("/api/compiler", require("./routes/compiler"));
 app.use("/api/github", require("./routes/github"));
-app.use("/api/payment", require("./routes/payment"));
+// app.use("/api/payment", require("./routes/payment"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/auth", require("./routes/auth"));
@@ -139,7 +138,12 @@ app.use((err, req, res, next) => {
 // GLOBAL CONFIG: Port 5051
 const PORT = process.env.PORT || 5051;
 
-app.listen(PORT, "127.0.0.1", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+// 🔥 CRITICAL FIX FOR NODE DISCONNECTED
+server.setTimeout(0);
+server.keepAliveTimeout = 0;
+server.headersTimeout = 0;
 

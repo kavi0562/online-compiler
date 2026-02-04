@@ -21,7 +21,7 @@ function HistoryPage() {
                 return;
             }
 
-            const res = await axios.get("http://localhost:5051/api/history", {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/history`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistory(res.data);
@@ -38,7 +38,7 @@ function HistoryPage() {
 
         try {
             const token = localStorage.getItem("token");
-            await axios.delete(`http://localhost:5051/api/history/${id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/history/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistory(history.filter(item => item._id !== id));

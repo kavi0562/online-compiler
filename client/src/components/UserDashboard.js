@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import ReactorCore from "./scifi/ReactorCore";
@@ -11,7 +11,6 @@ import ChatAssistant from "./scifi/ChatAssistant";
 import TemporalLogs from "./scifi/TemporalLogs";
 import ReactorLogo from "./scifi/ReactorLogo";
 import { LayoutTemplate, Database, Download, Share2, Copy } from "lucide-react";
-
 import { LANGUAGES } from "../data/languages";
 
 // Boilerplates
@@ -107,28 +106,38 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   const [repo, setRepo] = useState("");
   const [isAutoPushEnabled, setIsAutoPushEnabled] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setLocalUsageCount(user.githubSyncUsage || 0);
+  // 1. Sync Local Usage Count (Only when count changes)
+  // Extract primitive to avoid 'user' object dependency in effect
+  const githubSyncUsage = user?.githubSyncUsage;
 
-      // Fetch History
-      axios.get("http://localhost:5051/api/compiler/history", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      })
-        .then(res => {
-          if (res.data) {
-            setHistory(res.data);
-          }
-        })
-        .catch(err => {
-          if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-            // Expected for guest/unauth users - silent fail
-            return;
-          }
-          console.error("HISTORY_DESC_FAILED:", err);
-        });
+  useEffect(() => {
+    if (githubSyncUsage !== undefined) {
+      setLocalUsageCount(githubSyncUsage);
     }
-  }, [user]);
+  }, [githubSyncUsage]);
+
+  // 2. Fetch History (ONCE per login session or manual refresh)
+  const fetchHistory = useCallback(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    axios.get(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/compiler/history`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (res.data) setHistory(res.data);
+      })
+      .catch(err => {
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) return;
+        console.error("HISTORY_FETCH_FAILED:", err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (user?.uid) {
+      fetchHistory();
+    }
+  }, [user?.uid, fetchHistory]);
 
   // Extract Input Prompts from Code
   useEffect(() => {
@@ -137,47 +146,101 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
     const hints = [];
 
     const strategies = {
-      python: [/input\s*\(\s*["']([^"']+)["']\s*\)/g],
-      c: [/printf\s*\(\s*["']([^"']+)["']\s*\)/g],
-      cpp: [
-        /cout\s*<<\s*["']([^"']+)["']/g,
-        /printf\s*\(\s*["']([^"']+)["']\s*\)/g
+      python: [
+        /input\s*\(\s*["']([^"']+)["']\s*\)/g, // Python input function
       ],
-      java: [/System\.out\.print(?:ln)?\s*\(\s*["']([^"']+)["']\s*\)/g],
-      csharp: [/Console\.Write(?:Line)?\s*\(\s*["']([^"']+)["']\s*\)/g],
-      go: [/fmt\.Print(?:ln|f)?\s*\(\s*["']([^"']+)["']\s*\)/g],
-      rust: [/println!\s*\(\s*["']([^"']+)["']\s*\)/g],
+      c: [
+        /printf\s*\(\s*["']([^"']+)["']\s*\)/g // C printf before scanf
+      ],
+      cpp: [
+        /cout\s*<<\s*["']([^"']+)["']/g,       // C++ cout streaming
+        /printf\s*\(\s*["']([^"']+)["']\s*\)/g  // C-style printf in C++
+      ],
+      java: [
+        /System\.out\.print(?:ln)?\s*\(\s*["']([^"']+)["']\s*\)/g // Java sysout
+      ],
+      csharp: [
+        /Console\.Write(?:Line)?\s*\(\s*["']([^"']+)["']\s*\)/g
+      ],
+      go: [
+        /fmt\.Print(?:ln|f)?\s*\(\s*["']([^"']+)["']\s*\)/g
+      ],
+      rust: [
+        /println!\s*\(\s*["']([^"']+)["']\s*\)/g
+      ],
       javascript: [
         /prompt\s*\(\s*["']([^"']+)["']\s*\)/g,
         /console\.log\s*\(\s*["']([^"']+)["']\s*\)/g
       ]
     };
 
+    // Fallback Strategies: Detect input variables when no prompts exist
+    const fallbackStrategies = {
+      cpp: [/cin\s*((?:>>\s*\w+\s*)+);/g],
+      c: [/scanf\s*\(\s*["'][^"']+["']\s*,\s*((?:&?\w+\s*,?\s*)+)\)/g],
+      python: [/(?:^|\s)(\w+)\s*=\s*input\s*\(\s*\)/g], // input() without arguments
+      java: [/(?:Scanner|in)\.(?:next\w*)\s*\(\s*\)/g] // Very basic scanner detection
+    };
+
     let langKey = language.toLowerCase();
+    // Normalize keys
     if (langKey === 'py') langKey = 'python';
     if (langKey === 'js') langKey = 'javascript';
     if (langKey === 'cs') langKey = 'csharp';
     if (langKey === 'rs') langKey = 'rust';
 
+    // 1. Primary Scan: Explicit Prompts
     const activeRegexes = strategies[langKey] || [];
-
     for (const regex of activeRegexes) {
       let match;
-      regex.lastIndex = 0; // Reset for global regex
+      regex.lastIndex = 0;
       while ((match = regex.exec(code)) !== null) {
         const captured = match[1].trim();
 
-        // FILTER: Only keep if it looks like a prompt
+        // Use stricter filter for non-input specific commands like printf/cout
+        // to avoid capturing "Result is: ..." headers.
+
+        // Python 'input()' text is ALWAYS a prompt.
         if (langKey === 'python' && match[0].includes('input')) {
           hints.push(captured);
           continue;
         }
 
-        const isQuestion = /:$/.test(captured) || /\?$/.test(captured) || />$/.test(captured);
-        const hasKeywords = /enter|input|type|specify|provide|choose/i.test(captured);
+        const isQuestion = /[:?=]$/.test(captured) || />$/.test(captured);
+        const hasKeywords = /enter|input|type|specify|provide|choose|give|value|number/i.test(captured);
 
         if (isQuestion || hasKeywords) {
           hints.push(captured);
+        }
+      }
+    }
+
+    // 2. Fallback Scan: Input Variables (if no prompts found)
+    if (hints.length === 0) {
+      const fallbackRegexes = fallbackStrategies[langKey] || [];
+      for (const regex of fallbackRegexes) {
+        let match;
+        regex.lastIndex = 0;
+        while ((match = regex.exec(code)) !== null) {
+          // Logic for C++ cin chaining: cin >> a >> b;
+          if (langKey === 'cpp') {
+            const chain = match[1]; // ">> a >> b"
+            const vars = chain.split('>>').map(s => s.trim()).filter(s => s);
+            vars.forEach(v => hints.push(`Enter value for ${v}`));
+          }
+          // Logic for C scanf: &a, &b
+          else if (langKey === 'c') {
+            const args = match[1]; // "&a, &b"
+            const vars = args.split(',').map(s => s.trim().replace('&', '')).filter(s => s);
+            vars.forEach(v => hints.push(`Enter value for ${v}`));
+          }
+          // Logic for Python x = input()
+          else if (langKey === 'python') {
+            hints.push(`Enter value for ${match[1]}`);
+          }
+          else {
+            hints.push(`Input Required`);
+          }
         }
       }
     }
@@ -304,7 +367,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   const handleShare = async () => {
     try {
       console.log(">> INITIATING_SHARE_PROTOCOL...");
-      const response = await axios.post("http://localhost:5051/api/share", {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/share`, {
         sourceCode: code,
         language: language
       });
@@ -350,17 +413,17 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:5051/api/compiler/execute",
+        `${process.env.REACT_APP_API_URL}/api/compiler/execute`,
         { code, language, input, description: logDescription },
         { headers: user ? { Authorization: `Bearer ${localStorage.getItem("token")}` } : {} }
       );
 
       const endTime = Date.now();
       const duration = ((endTime - startTime) / 1000).toFixed(2);
-      let result = res.data.output;
+      let result = res.data.output || "";
       let hasError = false;
 
-      if (result.includes("Error") || result.includes("Exception") || result.includes("Traceback")) {
+      if (typeof result === 'string' && (result.includes("Error") || result.includes("Exception") || result.includes("Traceback"))) {
         setIsError(true);
         hasError = true;
       }
@@ -418,7 +481,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
         'c': 'main.c'
       };
 
-      await axios.post("http://localhost:5051/api/github/auto-push-cli", {
+      await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/github/auto-push-cli`, {
         repo: repo,
         code: code,
         filename: filenameMap[language] || 'code.txt',
@@ -448,7 +511,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   const handleDeleteHistory = async (logId) => {
     if (!logId) return;
     try {
-      await axios.delete(`http://localhost:5051/api/compiler/history/${logId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/compiler/history/${logId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       setHistory(prev => prev.filter(log => log.id !== logId));
@@ -462,7 +525,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
 
   const clearHistory = async () => {
     try {
-      await axios.delete("http://localhost:5051/api/compiler/history/all", {
+      await axios.delete(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/compiler/history/all`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       setHistory([]);
@@ -503,7 +566,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
       };
       const filename = extMap[language] || 'code.txt';
 
-      const res = await axios.post("http://localhost:5051/api/github/push", {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/github/push`, {
         repo: repo, // Format: "owner/repo"
         message: message,
         code: code,
@@ -798,7 +861,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             isAutoPushEnabled={isAutoPushEnabled}
             onToggleAutoPush={setIsAutoPushEnabled}
           />
-          <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} onDelete={handleDeleteHistory} activeLogId={activeLogId} user={user} onConnectGithub={onConnectGithub} />
+          <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} onDelete={handleDeleteHistory} onRefresh={fetchHistory} activeLogId={activeLogId} user={user} onConnectGithub={onConnectGithub} />
         </div>
 
         {/* HOLO TERMINAL (Bottom) */}

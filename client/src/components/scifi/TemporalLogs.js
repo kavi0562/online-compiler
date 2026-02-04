@@ -1,7 +1,7 @@
 import React from 'react';
 import { History, FileCode, Clock, RotateCcw, Trash2 } from 'lucide-react';
 
-const TemporalLogs = ({ history, onRestore, onClear, onDelete, activeLogId, user, onConnectGithub }) => {
+const TemporalLogs = ({ history, onRestore, onClear, onDelete, onRefresh, activeLogId, user, onConnectGithub }) => {
     return (
         <div className="flex-1 h-full bg-glass border border-glass rounded-2xl p-4 flex flex-col shadow-lg min-h-0 relative overflow-hidden">
 
@@ -13,13 +13,24 @@ const TemporalLogs = ({ history, onRestore, onClear, onDelete, activeLogId, user
                         TEMPORAL_LOGS
                     </span>
                 </div>
-                {user && history.length > 0 && (
-                    <button
-                        onClick={onClear}
-                        className="text-[9px] text-red-400 hover:text-red-300 flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
-                    >
-                        <Trash2 size={10} /> CLEAR
-                    </button>
+                {user && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onRefresh}
+                            className="text-[9px] text-neon-cyan/70 hover:text-neon-cyan flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
+                            title="Refresh History"
+                        >
+                            <RotateCcw size={10} /> REFRESH
+                        </button>
+                        {history.length > 0 && (
+                            <button
+                                onClick={onClear}
+                                className="text-[9px] text-red-400 hover:text-red-300 flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
+                            >
+                                <Trash2 size={10} /> CLEAR
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 

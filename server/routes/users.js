@@ -37,6 +37,12 @@ router.post("/sync", async (req, res) => {
             if (isAdminEmail) {
                 user.role = 'admin'; // Enforce Admin on merge
             }
+
+            // AUTO-UPGRADE ALL USERS TO PRO (REMOVE PRICING)
+            if (user.subscriptionPlan === 'free') {
+                user.subscriptionPlan = 'pro';
+            }
+
             if (req.body.githubAccessToken) {
                 user.githubAccessToken = req.body.githubAccessToken;
             }

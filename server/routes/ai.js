@@ -73,6 +73,15 @@ SAFETY:
         });
 
     } catch (error) {
+        // Handle specific 401 Invalid API Key error
+        if (error.status === 401 || (error.error && error.error.code === 'invalid_api_key')) {
+            console.warn("⚠️ AI_AUTH_FAILURE: Groq API Key invalid/expired.");
+            return res.status(401).json({
+                error: "INVALID_API_KEY",
+                message: "The provided Groq API Key is invalid or expired. Please update it in the server .env file."
+            });
+        }
+
         console.error("AI_FAILURE:", error);
         res.status(500).json({
             error: "NEURAL_NET_UNRESPONSIVE",

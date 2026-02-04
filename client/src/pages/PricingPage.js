@@ -20,7 +20,7 @@ const PricingPage = () => {
             }
 
             // Mock Payment Call
-            const res = await axios.post('http://localhost:5051/api/payment/upgrade',
+            const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/payment/upgrade`,
                 { plan, billingCycle }, // Passing cycle to backend
                 { headers: { Authorization: `Bearer ${token}` } }
             );

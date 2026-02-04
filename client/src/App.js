@@ -9,7 +9,7 @@ import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import HistoryPage from "./pages/HistoryPage";
 import Syllabus from "./pages/Syllabus";
-import PricingPage from "./pages/PricingPage";
+// import PricingPage from "./pages/PricingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import BottomNav from "./components/BottomNav";
@@ -50,6 +50,9 @@ function App() {
             setRole('user');
           }
         }
+
+
+
 
 
         // 2. Sync with Backend
@@ -172,7 +175,8 @@ function App() {
       const pendingToken = localStorage.getItem("pending_github_token");
       const activeToken = firebaseUser.githubAccessToken || localStorage.getItem("github_token") || pendingToken;
 
-      const response = await axios.post("http://localhost:5051/api/users/sync", {
+      const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5051";
+      const response = await axios.post(`${apiBase}/api/users/sync`, {
         uid: firebaseUser.uid,
         name: firebaseUser.displayName || email.split("@")[0],
         email: email,
@@ -439,13 +443,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/pricing"
-          element={
-            // Access to pricing page is public, but upgrading requires login (handled in page)
-            <PricingPage />
-          }
-        />
+
 
         <Route
           path="/admin"

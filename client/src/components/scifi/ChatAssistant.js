@@ -118,7 +118,7 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
         setIsThinking(true);
 
         try {
-            const res = await axios.post("http://localhost:5051/api/ai/chat", {
+            const res = await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/ai/chat`, {
                 message: userMsg.content,
                 language: language
             });
@@ -126,7 +126,17 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
             const aiMsg = { role: 'ai', content: res.data.response };
             setMessages(prev => [...prev, aiMsg]);
         } catch (err) {
-            setMessages(prev => [...prev, { role: 'ai', content: "Re-connecting to Neural Link..." }]);
+            let errorMsg = "CONNECTION_LOST: Re-connecting to Neural Link...";
+
+            if (err.response) {
+                if (err.response.status === 401 || err.response.data?.error === "INVALID_API_KEY") {
+                    errorMsg = "⚠️ AUTHENTICATION ERROR: Invalid Groq API Key. Please update the server .env file.";
+                } else if (err.response.data?.error) {
+                    errorMsg = `SYSTEM FAILURE: ${err.response.data.error}`;
+                }
+            }
+
+            setMessages(prev => [...prev, { role: 'ai', content: errorMsg }]);
         } finally {
             setIsThinking(false);
         }

@@ -61,7 +61,7 @@ function AdminDashboard() {
 
       // 2. Fetch System Health (Port 5051)
       try {
-        await axios.get("http://localhost:5051/api/status");
+        await axios.get(`${process.env.REACT_APP_API_URL}/api/status`);
         // Don't set ONLINE yet, wait for user data
       } catch (healthErr) {
         console.warn("M1_STATUS_CHECK_FAILED:", healthErr);
@@ -90,7 +90,7 @@ function AdminDashboard() {
           console.error(">> TOKEN_DECODE_ERROR:", e);
         }
 
-        const res = await axios.get("http://localhost:5051/api/admin/users", {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/users`, {
           headers: {
             Authorization: `Bearer ${cleanToken}`
           }

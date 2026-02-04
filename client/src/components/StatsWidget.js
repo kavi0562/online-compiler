@@ -13,7 +13,7 @@ function StatsWidget({ refreshTrigger }) {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const res = await axios.get("http://localhost:5051/api/history", {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL || "http://localhost:5051"}/api/history`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

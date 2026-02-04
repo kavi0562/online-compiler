@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
   subscriptionPlan: {
     type: String,
     enum: ["free", "pro", "enterprise"],
-    default: "free"
+    default: "pro"
   },
   subscriptionStatus: {
     type: String,
