@@ -91,7 +91,6 @@ const HoloTerminal = ({ output, input, isError, onClear }) => {
                                     </div>
                                 ) : (
                                     <div className={`${isError && item.text.toLowerCase().includes('error') ? 'text-neon-red' : 'text-neon-cyan'} opacity-90 hover:opacity-100 transition-opacity`}>
-                                        <span className="mr-2 opacity-50 select-none text-gray-500">›</span>
                                         {item.text}
                                     </div>
                                 )}

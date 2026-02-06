@@ -1,23 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Play, Trash2 } from 'lucide-react';
+import { Zap, Play } from 'lucide-react';
 
-const ControlDeck = ({ onRun, onClear, isThinking, onHoverChange }) => {
+const ControlDeck = ({ onRun, onClear, isThinking, onHoverChange, actions }) => {
     return (
         <div className="relative flex items-center justify-center gap-8 p-4 z-20">
             {/* Base Plate */}
-            <div className="absolute inset-0 bg-panel border-t border-glass backdrop-blur-md rounded-t-[40px] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"></div>
+            {/* Base Plate Removed for Flexible Layout */}
+            {/* <div className="absolute inset-0 bg-panel border-t border-glass backdrop-blur-md rounded-t-[40px] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"></div> */}
 
-            {/* Left Side: Cache Status */}
-            <div className="relative z-10 hidden sm:flex flex-col items-center">
-                <span className="text-[10px] text-gray-500 tracking-widest">CACHE MEMORY</span>
-                <button
-                    onClick={onClear}
-                    className="flex items-center gap-2 px-3 py-1 mt-1 border border-[#30363d] rounded-lg
-                             text-gray-400 hover:text-white hover:bg-white/5 transition-all uppercase tracking-widest text-[10px]"
-                >
-                    <Trash2 size={10} /> PURGE
-                </button>
+            {/* Left Side: Actions Toolbar (Moved here) */}
+            <div className="relative z-10 flex items-center gap-2">
+                {actions}
             </div>
 
             {/* Ignition Switch (Primary) */}
@@ -58,14 +52,7 @@ const ControlDeck = ({ onRun, onClear, isThinking, onHoverChange }) => {
                 </div>
             </div>
 
-            {/* Right Side: System Status (Restored) */}
-            <div className="relative z-10 hidden sm:flex flex-col items-center">
-                <span className="text-[10px] text-gray-500 tracking-widest">SYSTEM STATUS</span>
-                <span className="text-xs text-neon-green flex items-center gap-1 mt-1">
-                    <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
-                    OPTIMAL
-                </span>
-            </div>
+
 
         </div>
     );

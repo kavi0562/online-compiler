@@ -60,7 +60,7 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(helmet({
-  crossOriginOpenerPolicy: false, // COMPLETELY DISABLE for Google Auth Popup
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow Google Auth Popup
   crossOriginResourcePolicy: false, // COMPLETELY DISABLE for Piston/External Resources
   contentSecurityPolicy: false // Disable CSP for now if it conflicts
 }));
