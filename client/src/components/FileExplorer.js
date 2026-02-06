@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, FileCode, Folder, Clock, Search, Files, GitBranch, Box, MoreVertical } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { ChevronRight, ChevronDown, FileCode, Clock, Search, Files, MoreVertical } from 'lucide-react';
 
 const FileExplorer = ({
     currentLanguage,

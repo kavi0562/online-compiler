@@ -9,6 +9,7 @@ import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import HistoryPage from "./pages/HistoryPage";
 import Syllabus from "./pages/Syllabus";
+import ResetPassword from "./pages/ResetPassword"; // Import ResetPassword
 // import PricingPage from "./pages/PricingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -153,7 +154,7 @@ function App() {
     handleRedirectResult();
   }, []);
 
-  const syncUserWithBackend = async (firebaseUser) => {
+  const syncUserWithBackend = async (firebaseUser, additionalData = {}) => {
     try {
       // ROBUST EMAIL HANDLING
       let email = firebaseUser.email;
@@ -182,7 +183,8 @@ function App() {
         email: email,
         photoURL: firebaseUser.photoURL || "",
         provider: providerId,
-        githubAccessToken: activeToken
+        githubAccessToken: activeToken,
+        mobileNumber: additionalData.mobile || undefined // Pass mobile if provided
       });
 
       // Cleanup pending token if used
@@ -212,10 +214,13 @@ function App() {
 
   // --- Auth Handlers ---
 
-  const handleManualSignup = async (email, password) => {
+  const handleManualSignup = async (email, password, mobile) => {
     setLoadingAction(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      // Explicitly sync to save mobile number immediately
+      console.log(">> MANUAL_SIGNUP_SUCCESS. SYNCING_PROFILE_WITH_MOBILE:", mobile);
+      await syncUserWithBackend(result.user, { mobile });
       return null; // Success
     } catch (error) {
       console.error("MANUAL_SIGNUP_FAILURE:", error);
@@ -238,13 +243,22 @@ function App() {
     }
   };
 
-  const handlePasswordReset = async (email) => {
+  const handlePasswordReset = async (input, type = 'email') => {
     setLoadingAction(true);
     try {
-      await sendPasswordResetEmail(auth, email);
-      return { success: true, message: "RESET_LINK_SENT: CHECK_INBOX" };
+      if (type === 'mobile') {
+        const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5051";
+        const res = await axios.post(`${apiBase}/api/auth/mobile-reset`, { mobile: input });
+        return { success: true, message: res.data.message };
+      } else {
+        // Default Email Flow
+        await sendPasswordResetEmail(auth, input);
+        return { success: true, message: "RESET_LINK_SENT: CHECK_INBOX" };
+      }
     } catch (error) {
-      return { success: false, message: error.code };
+      console.error("RESET_ERROR:", error);
+      const msg = error.response?.data?.message || error.code || "RESET_FAILED";
+      return { success: false, message: msg };
     } finally {
       setLoadingAction(false);
     }
@@ -285,9 +299,9 @@ function App() {
     try {
       const provider = providerType === 'github' ? githubProvider : googleProvider;
 
-      if (providerType !== 'github') {
-        provider.setCustomParameters({ prompt: 'select_account' });
-      }
+      // FORCE ACCOUNT SELECTION FOR EVERYONE (Google & GitHub)
+      // This ensures "not coming back" to the same account if user wants to switch.
+      provider.setCustomParameters({ prompt: 'select_account' });
 
       // SMART AUTH HANDLER: Link if logged in, Sign In if not
       let result;
@@ -302,6 +316,56 @@ function App() {
       const user = result.user;
 
       console.log('User Email from Provider:', user.email);
+
+      // --- AUTO-LINK GITHUB STRATEGY (If Google Login) ---
+      if (providerType === 'google') {
+        const isGithubLinked = user.providerData.some(p => p.providerId === 'github.com');
+        if (!isGithubLinked) {
+          console.log(">> GOOGLE_LOGIN: GITHUB_MISSING. INITIATING_AUTO_LINK...");
+          try {
+            // alert("Please link your GitHub account to proceed."); 
+
+            // FORCE SELECTION DURING AUTO-LINK TOO
+            githubProvider.setCustomParameters({ prompt: 'select_account' });
+
+            const linkResult = await linkWithPopup(user, githubProvider);
+            const linkCredential = GithubAuthProvider.credentialFromResult(linkResult);
+
+            if (linkCredential && linkCredential.accessToken) {
+              setGithubToken(linkCredential.accessToken);
+              localStorage.setItem("github_token", linkCredential.accessToken);
+
+              // Force immediate sync with the new token so backend knows
+              // Note: onAuthStateChanged will also fire, but might miss the token if we rely only on that.
+              await syncUserWithBackend({ ...user, githubAccessToken: linkCredential.accessToken });
+            }
+            console.log(">> AUTO_LINK_SUCCESS: GitHub linked.");
+
+          } catch (linkError) {
+            console.error(">> AUTO_LINK_ERROR:", linkError);
+
+            if (linkError.code === 'auth/credential-already-in-use') {
+              // User request: "chupinchey llaga chey" (show them how to login) and "malli back raku" (don't come back)
+              // If the GitHub account is already used, we can't link it to THIS Google account.
+              // We should probably prompt them to login with that GitHub account instead.
+              const switchAccount = window.confirm("This GitHub account is already linked to another user.\n\nClick OK to switch to that GitHub account.\nClick Cancel to continue with just Google.");
+
+              if (switchAccount) {
+                await signOut(auth);
+                // Recursively call handleLogin for GitHub to switch users
+                // We return here to stop the Google login flow from continuing as the "active" session
+                // although onAuthStateChanged might have already fired for Google.
+                // SignOut will trigger onAuthStateChanged(null), then handleLogin('github') will trigger new login.
+                handleLogin('github');
+                return;
+              }
+            } else if (linkError.code === 'auth/popup-closed-by-user') {
+              console.warn("User closed GitHub linking popup.");
+              // User skipped linking. We just proceed with Google.
+            }
+          }
+        }
+      }
 
       // GitHub Token Handling if applicable
       if (providerType === 'github') {
@@ -349,12 +413,15 @@ function App() {
             }
           } catch (innerErr) {
             console.error("SOFT_LINK_FAILURE:", innerErr);
+            return innerErr; // Return inner error
           }
         }
       } else if (error.code === 'auth/popup-closed-by-user') {
         console.warn("Auth popup closed by user.");
+        return { code: 'auth/popup-closed-by-user', message: "Login popup closed." };
       } else {
         // alert("Login failed. Check console for details."); 
+        return error; // Return the actual error
       }
     } finally {
       setLoadingAction(false);
@@ -413,6 +480,9 @@ function App() {
             )
           }
         />
+
+        {/* RESET PASSWORD ROUTE */}
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* PROTECTED: User Dashboard (Explicit) - redirect to / if just viewing compiler, 
             but if we want to enforce auth for specific dashboard features we can keep it. 

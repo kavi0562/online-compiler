@@ -46,6 +46,9 @@ router.post("/sync", async (req, res) => {
             if (req.body.githubAccessToken) {
                 user.githubAccessToken = req.body.githubAccessToken;
             }
+            if (req.body.mobileNumber) {
+                user.mobileNumber = req.body.mobileNumber;
+            }
             await user.save();
         } else {
             // CREATE: New User
@@ -59,7 +62,8 @@ router.post("/sync", async (req, res) => {
                 role: isAdminEmail ? 'admin' : 'user',
                 lastLogin: Date.now(),
                 isBlocked: false,
-                githubAccessToken: req.body.githubAccessToken || undefined
+                githubAccessToken: req.body.githubAccessToken || undefined,
+                mobileNumber: req.body.mobileNumber || undefined
             });
         }
 

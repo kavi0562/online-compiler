@@ -164,7 +164,7 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-[#FFBF00] font-mono p-6 flex flex-col gap-6 overflow-hidden relative">
+    <div className="h-screen bg-black text-[#FFBF00] font-mono p-6 flex flex-col gap-6 overflow-hidden relative">
 
       {/* Background Grid & Scanlines */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,191,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,191,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
@@ -224,6 +224,56 @@ function AdminDashboard() {
           {isOffline ? <ServerOff size={24} className="text-red-500" /> : <Wifi size={24} className="text-green-500" />}
         </div>
 
+      </div>
+
+      {/* USER PROVISIONING SECTION */}
+      <div className="mb-4 p-4 border border-neon-cyan/30 rounded bg-[#0a0a1a]/90 backdrop-blur z-10">
+        <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2 border-b border-neon-cyan/20 pb-2">
+          <span className="text-neon-cyan">{">>"}</span> PROVISION_NEW_USER
+        </h2>
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+            const token = localStorage.getItem("token");
+            const email = e.target.email.value;
+            const mobile = e.target.mobile.value;
+            const role = e.target.role.value;
+
+            // Strip quotes if they exist
+            const cleanToken = token?.replace(/^"(.*)"$/, '$1');
+
+            const res = await axios.post("http://localhost:5051/api/admin/create-user", {
+              email, mobile, role
+            }, {
+              headers: { Authorization: `Bearer ${cleanToken}` }
+            });
+
+            alert(`SUCCESS: User Created!\n------------------\nTemp Password: ${res.data.debug_temp_password}\n------------------\n(Share this with the user)`);
+            e.target.reset();
+            handleAction("REFRESH_DATA"); // Auto-refresh list
+          } catch (err) {
+            alert("ERROR: " + (err.response?.data?.message || err.message));
+          }
+        }} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div>
+            <label className="block text-[10px] text-neon-cyan tracking-widest font-mono mb-1">EMAIL_ADDRESS</label>
+            <input name="email" type="email" required placeholder="student@college.edu" className="w-full bg-[#050510]/50 border border-[#30363d] rounded p-2 text-white text-xs font-mono focus:border-neon-cyan outline-none" />
+          </div>
+          <div>
+            <label className="block text-[10px] text-neon-cyan tracking-widest font-mono mb-1">MOBILE_NUMBER</label>
+            <input name="mobile" type="tel" required placeholder="+91..." className="w-full bg-[#050510]/50 border border-[#30363d] rounded p-2 text-white text-xs font-mono focus:border-neon-cyan outline-none" />
+          </div>
+          <div>
+            <label className="block text-[10px] text-neon-cyan tracking-widest font-mono mb-1">ROLE</label>
+            <select name="role" className="w-full bg-[#050510]/50 border border-[#30363d] rounded p-2 text-white text-xs font-mono focus:border-neon-cyan outline-none">
+              <option value="user">STUDENT / FACULTY</option>
+              <option value="admin">ADMINISTRATOR</option>
+            </select>
+          </div>
+          <button type="submit" className="bg-neon-cyan/10 border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/20 font-bold py-2 rounded transition-all tracking-wider text-xs">
+            INITIALIZE_USER
+          </button>
+        </form>
       </div>
 
       {/* MAIN CONTENT Area */}

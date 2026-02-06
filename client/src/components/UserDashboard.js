@@ -17,7 +17,7 @@ import { LANGUAGES } from "../data/languages";
 const BOILERPLATES = {
   python: 'print("Hello from the Void!")',
   java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Systems Operational.");\n    }\n}',
-  javascript: 'console.log("Reactor Core Online...");',
+  javascript: 'console.log("N Compiler Systems Online...");',
   cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Energy Levels Optimal." << std::endl;\n    return 0;\n}',
   c: '#include <stdio.h>\n\nint main() {\n    printf("System Ignition...\\n");\n    return 0;\n}',
   csharp: 'using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Neural Uplink Established.");\n    }\n}',
@@ -354,7 +354,15 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
       'js': 'javascript',
       'java': 'java',
       'cpp': 'cpp',
-      'c': 'cpp',
+      'c': 'c',
+      'cs': 'csharp',
+      'go': 'go',
+      'rs': 'rust',
+      'php': 'php',
+      'rb': 'ruby',
+      'swift': 'swift',
+      'ts': 'typescript',
+      'sh': 'bash',
     };
     if (extMap[extension]) {
       setLanguage(extMap[extension]);
@@ -543,6 +551,20 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
     setIsError(false);
   };
 
+  // Unified Clear Function for Reactor Core (Trash Button)
+  const handleCoreClear = () => {
+    setCode("");
+    setInput("");
+    setFormValues({});
+    setInputHints([]); // Optional: Hints usually derive from code, so clearing code clears hints via effect, but good to be explicit
+    // We don't necessarily clear output? User asked "input lo unaa undhi delete ipovali". 
+    // Usually clear code -> clear output too makes sense, but let's stick to what was asked: Code + Input.
+    // Let's clear output too for a fresh start? Maybe safer.
+    // The user said: "compiler lo delete option kotaganey input lo unaa unadhi anthaa delete ipovalli"
+    // "When delete option is clicked, everything in input should be deleted".
+    // It implies Code is deleted (existing behavior) AND Input is deleted.
+  };
+
   const handleInsertCode = (codeSnippet) => {
     // Replace existing code with the new snippet as requested
     setCode(codeSnippet);
@@ -685,7 +707,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
 
                 {/* X / Twitter */}
                 <a
-                  href={`https://twitter.com/intent/tweet?text=Check out my code snippet on Reactor.io!&url=${encodeURIComponent(shareUrl)}`}
+                  href={`https://twitter.com/intent/tweet?text=Check out my code snippet on N Compiler!&url=${encodeURIComponent(shareUrl)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative flex items-center justify-center w-10 h-10 bg-white rounded hover:scale-110 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.4)]"
@@ -708,8 +730,8 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
               <ReactorLogo className="w-6 h-6 text-neon-cyan" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-wider text-white">REACTOR<span className="text-neon-cyan">.IO</span></h1>
-              <span className="text-[10px] text-gray-400">SYSTEM STATUS: ONLINE</span>
+              <h1 className="text-lg font-bold tracking-wider text-white">N <span className="text-neon-cyan">COMPILER</span></h1>
+              <span className="text-[10px] text-gray-400">N COMPILER – SYSTEM STATUS: ONLINE</span>
             </div>
           </div>
         </div>
@@ -840,6 +862,7 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             ignitionHover={ignitionHover}
             isMaximized={isEditorMaximized}
             onToggleMaximize={() => setIsEditorMaximized(!isEditorMaximized)}
+            onClear={handleCoreClear}
           />
           {/* Connection Beam to Terminal - Desktop Only */}
           {!isThinking && output && !isError && (

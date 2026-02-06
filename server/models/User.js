@@ -15,6 +15,15 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true // Allows null/undefined to not conflict
   },
+  mobileNumber: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  firstLogin: {
+    type: Boolean,
+    default: true
+  },
   firebaseUid: {
     type: String,
     required: false, // Changed to allow manual collection registration

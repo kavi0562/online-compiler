@@ -12,11 +12,15 @@ const SharedCodePage = () => {
     const [error, setError] = useState(null);
     const [copied, setCopied] = useState(false);
 
+    const [language, setLanguage] = useState("javascript");
+
     useEffect(() => {
         const fetchCode = async () => {
             try {
-                const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/share/${id}`);
+                const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5051";
+                const res = await axios.get(`${apiBase}/api/share/${id}`);
                 setCode(res.data.sourceCode);
+                if (res.data.language) setLanguage(res.data.language);
                 setLoading(false);
             } catch (err) {
                 console.error("Failed to load code:", err);
@@ -41,13 +45,7 @@ const SharedCodePage = () => {
         );
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-black flex items-center justify-center text-neon-cyan font-mono animate-pulse">
-                &gt;&gt; RECEIVING_TRANSMISSION...
-            </div>
-        );
-    }
+
 
     if (error) {
         return (
@@ -64,9 +62,9 @@ const SharedCodePage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-black text-gray-200 font-mono flex flex-col relative overflow-hidden">
+        <div className="h-screen bg-black text-gray-200 font-mono flex flex-col relative overflow-hidden pt-24">
             {/* Header */}
-            <header className="border-b border-gray-800 p-4 flex items-center justify-between z-10 bg-black/80 backdrop-blur">
+            <header className="border-b border-gray-800 p-4 flex items-center justify-between z-10 bg-black/80 backdrop-blur shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse"></div>
                     <h1 className="text-neon-cyan font-bold tracking-[0.2em] text-sm">SECURE_CODE_VIEWER</h1>
@@ -81,6 +79,7 @@ const SharedCodePage = () => {
                     </button>
                     <Link
                         to="/"
+                        state={{ challengeCode: code, language: language }}
                         className="flex items-center gap-2 px-4 py-1.5 bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/20 rounded transition-all text-xs font-bold"
                     >
                         OPEN_COMPILER <ExternalLink size={14} />
@@ -92,7 +91,7 @@ const SharedCodePage = () => {
             <main className="flex-1 relative">
                 <Editor
                     height="100%"
-                    defaultLanguage="javascript"
+                    language={language}
                     value={code}
                     theme="vs-dark"
                     options={{

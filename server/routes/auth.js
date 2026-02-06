@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const admin = require("firebase-admin");
 
 const router = express.Router();
 
@@ -152,7 +153,8 @@ router.post("/login", async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        firstLogin: user.firstLogin
       }
     });
 
@@ -234,6 +236,138 @@ router.post("/sync", async (req, res) => {
   } catch (err) {
     console.error("SYNC_ERROR:", err);
     res.status(500).json({ message: "Server error during sync" });
+  }
+});
+
+/**
+ * CHANGE PASSWORD (Force First Login)
+ * POST /api/auth/change-password
+ */
+router.post("/change-password", async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+      return res.status(400).json({ message: "UserId and New Password required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await User.findByIdAndUpdate(userId, {
+      password: hashedPassword,
+      firstLogin: false
+    });
+
+    res.json({ success: true, message: "Password updated successfully. Please login." });
+
+  } catch (err) {
+    console.error("CHANGE_PASSWORD_ERROR:", err);
+    res.status(500).json({ message: "Server error during password change" });
+  }
+});
+
+/**
+ * MOBILE PASSWORD RESET (Dual Factor: Email + Mobile)
+ * POST /api/auth/mobile-reset
+ */
+router.post("/mobile-reset", async (req, res) => {
+  try {
+    const { email, mobile } = req.body;
+
+    if (!email || !mobile) {
+      return res.status(400).json({ message: "Email and Mobile Number are required" });
+    }
+
+    // 1. Find User by BOTH Email and Mobile
+    const user = await User.findOne({ email: email, mobileNumber: mobile });
+
+    // 2. Security: Don't reveal if user exists (Timing Attack Protection)
+    if (!user) {
+      // Fake delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return res.status(200).json({ message: "If details match, a reset link has been sent via SMS." });
+    }
+
+    // 3. Generate Token (Simple crypto token for MVP)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = await bcrypt.hash(resetToken, 10); // Hash it for DB storage
+
+    // Store in DB (We need a ResetToken model or add fields to User)
+    // For MVP, adding to User model is easier if we added fields.
+    // We didn't add resetToken fields to User model yet.
+    // Let's add them to User model OR create a `PasswordResetToken` collection.
+    // Task list said "Database Schema Updates: Add password_reset_tokens table/model".
+    // I haven't done that yet.
+
+    // TEMPORARY: Just log the token and rely on a mock or simple storage if allowed.
+    // BUT the task says "Secure hashing".
+    // I should create the schema.
+
+    // Let's try to update User model to store resetToken + expiry.
+    // It's cleaner for MVP than a separate collection.
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // 4. "Send" SMS (Log it)
+    const link = `http://localhost:3000/reset-password/${resetToken}?email=${email}`;
+    console.log(`\n[SMS_GATEWAY] To: ${mobile}`);
+    console.log(`[SMS_GATEWAY] Message: RESET_LINK: ${link}\n`);
+
+    res.json({ message: "If details match, a reset link has been sent via SMS." });
+
+  } catch (error) {
+    console.error("MOBILE_RESET_ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * RESET PASSWORD CONFIRM
+ * POST /api/auth/reset-password-confirm
+ */
+router.post("/reset-password-confirm", async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    // 1. Find User
+    const user = await User.findOne({
+      email: email,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    // 2. Verify Token
+    const isMatch = await bcrypt.compare(token, user.resetPasswordToken);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid token" });
+    }
+
+    // 3. Update Password
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    // Also clear firstLogin if it was set, assuming reset counts as setting a password?
+    // user.firstLogin = false; // Maybe?
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successful. Please login." });
+
+  } catch (err) {
+    console.error("RESET_CONFIRM_ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

@@ -41,7 +41,7 @@ function Navbar({ user, role, onLogout }) {
               <ReactorLogo className="w-6 h-6 text-neon-cyan animate-spin-slow" />
             </div>
             <span className="text-sm font-bold tracking-[0.2em] text-white hidden md:block">
-              REACTOR<span className="text-neon-cyan">.IO</span>
+              N <span className="text-neon-cyan">COMPILER</span>
             </span>
           </Link>
         </div>
