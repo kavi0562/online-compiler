@@ -102,7 +102,7 @@ app.use("/api/ai", require("./routes/ai"));
 app.use("/api/compiler", require("./routes/compiler"));
 app.use("/api/github", require("./routes/github"));
 // app.use("/api/payment", require("./routes/payment"));
-app.use("/api/admin", require("./routes/admin"));
+app.use("/api/admin", require("./routes/admin")); // Mount Admin Routes
 app.use("/api/users", require("./routes/users"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/test", require("./routes/test"));
@@ -113,7 +113,9 @@ app.use("/api/share", require("./routes/share"));
    DATABASE CONNECTION
 ======================= */
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    family: 4 // Force IPv4 to fix "querySrv ECONNREFUSED" on some networks
+  })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
   })

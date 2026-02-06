@@ -1,10 +1,33 @@
 
 import { useState, useEffect, useRef } from "react";
-import { Lock, Mail, ChevronRight, Github, Chrome, Cpu, ShieldCheck, Link } from "lucide-react";
+import axios from "axios";
+import { Lock, Mail, ChevronRight, Github, Chrome, Cpu, ShieldCheck, Link, MessageSquare, Key } from "lucide-react";
+import { auth } from "../firebase";
+import {
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  sendPasswordResetEmail,
+  updatePassword
+} from "firebase/auth";
 
 function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAccountLinking, loading }) {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  // AUTH V3: FIREBASE STATE
+  const [resetStep, setResetStep] = useState(0); // 0: Choice, 1: Email, 2: Mobile, 3: OTP, 4: New Password
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [phoneUser, setPhoneUser] = useState(null); // The signed-in user object after OTP
+
+  // Legacy/Other State
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [tempUserId, setTempUserId] = useState(null);
+
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
@@ -28,20 +51,7 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
     }
   }, [loading, onLogin]);
 
-  const handleForgotPassword = async () => {
-    setError("");
-    setSuccess("");
-    if (!email) {
-      setError("ENTER_NET_ADDRESS_FIRST");
-      return;
-    }
-    const result = await onPasswordReset(email);
-    if (result.success) {
-      setSuccess(result.message);
-    } else {
-      setError(result.message);
-    }
-  };
+
 
   const handleLinkAccount = async () => {
     setError("");
@@ -55,8 +65,107 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
     }
   };
 
+  // --- FIREBASE RESET HANDLERS ---
+
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+          console.log("RECAPTCHA_SOLVED");
+        }
+      });
+    }
+  };
+
+  const handleEmailReset = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccess("RESET_LINK_SENT_IF_EXISTS");
+      setTimeout(() => toggleMode(), 3000);
+    } catch (err) {
+      // Generic error for security
+      console.error(err);
+      setSuccess("RESET_LINK_SENT_IF_EXISTS");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleMobileInput = async (e) => {
+    e.preventDefault();
+    setError("");
+    setResetLoading(true);
+
+    setupRecaptcha();
+    const appVerifier = window.recaptchaVerifier;
+
+    try {
+      // Format mobile: Ensure +Prefix. Assuming user types local or full.
+      // For simplicity, assuming user enters full international or we prepend default.
+      // Let's assume input has + or we add it. 
+      // Note: Standard Firebase requires E.164 (e.g. +16505553434)
+      const phoneNumber = mobile.startsWith('+') ? mobile : `+91${mobile}`; // Default to +91 just in case, or force user.
+
+      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+      setConfirmationResult(confirmation);
+      setResetStep(3); // Go to OTP
+    } catch (err) {
+      console.error(err);
+      setError("SMS_SEND_FAILED: " + err.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setError("");
+    setResetLoading(true);
+    try {
+      const result = await confirmationResult.confirm(otp);
+      const user = result.user;
+      setPhoneUser(user);
+      setResetStep(4); // Go to New Password
+    } catch (err) {
+      setError("INVALID_OTP");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setResetLoading(true);
+    try {
+      if (!phoneUser) throw new Error("NO_USER");
+      await updatePassword(phoneUser, newPassword);
+      setSuccess("PASSWORD_UPDATED. PLEASE_LOGIN.");
+      // Cleanup
+      setResetStep(0);
+      setNewPassword("");
+      setOtp("");
+      setIsResetting(false);
+    } catch (err) {
+      setError("UPDATE_FAILED: " + err.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // In V3, Reset forms handle their own submit.
+    if (isResetting) return;
+
     setError("");
     setShowLinkOption(false);
 
@@ -67,7 +176,7 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
       // Success is handled by App.js (redirects to /admin or /user via auth listener)
     } else {
       // Call Manual Signup
-      authError = await onManualSignup(email, password);
+      authError = await onManualSignup(email, password, mobile);
 
       // Smart Mode Switch: If email exists, switch to login automatically
       if (authError === "auth/email-already-in-use") {
@@ -76,6 +185,25 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
         return;
       }
     }
+
+    // CHECK FOR FIRST LOGIN SIGNAL FROM APP.JS WRAPPER
+    // Note: onManualLogin in Login.js calls the prop. Use a local wrapper logic?
+    // Actually, onManualLogin likely returns an error string or null.
+    // We need to modify how onManualLogin is CALLED or how it RETURNS data.
+    // But since onManualLogin is a prop, we should check what it returns.
+    // If it returns a user object with firstLogin: true, we intercept.
+
+    // For now, let's assume App.js handles the API call. We might need to lift this logic or pass a callback.
+    // WAIT: Login.js calls onManualLogin(email, password). App.js implementation:
+    // const onManualLogin = ... (calls signInWithEmailAndPassword).
+    // BUT we are using our OWN backend for auth now in some places?
+    // User requested "Login using email + password" but App.js uses Firebase.
+    // The "Authentication System" requested is custom backend based?
+    // "User logs in using email + password." -> This implies we might bypass Firebase for this specific college flow?
+    // Or we sync?
+    // The "Admin manually creates a user... System generates temp password."
+    // This is a custom auth flow, NOT Firebase.
+    // So onManualLogin should probably call our backend `/api/auth/login`.
 
     if (authError) {
       // Map Firebase/System errors to UI messages
@@ -92,7 +220,15 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
   const toggleMode = () => {
     setIsRegistering(!isRegistering);
     setError("");
+    setSuccess("");
     setShowLinkOption(false);
+
+    // Auth V3 Reset
+    setResetStep(0);
+    setNewPassword("");
+    setOtp("");
+    setIsResetting(false); // If called from within Reset
+
     // Keep email populated for convenience
     // setPassword(""); 
     setFullName("");
@@ -122,7 +258,7 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
               <ShieldCheck size={32} className="text-neon-cyan" />
             </div>
             <h1 className="text-2xl font-bold tracking-[0.2em] text-white text-shadow-glow">
-              REACTOR<span className="text-neon-cyan">.IO</span> ACCESS
+              N <span className="text-neon-cyan">COMPILER</span> ACCESS
             </h1>
             <div className="flex items-center gap-2 mt-2 text-[10px] text-neon-magenta tracking-widest font-mono">
               <span className="w-2 h-2 bg-neon-magenta rounded-full animate-pulse"></span>
@@ -160,85 +296,230 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
 
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Signup Name Field - Only show if Registering */}
-            {isRegistering && (
-              <div className="space-y-1 group">
-                <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} ENTER_IDENTITY:</label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
-                    <Cpu size={16} />
+            {/* FORM FIELDS - DYNAMIC RENDERING */}
+
+            {/* 1. RESET PASSWORD MODE (V3: FIREBASE) */}
+            {isResetting && (
+              <>
+                <div id="recaptcha-container"></div>
+
+                {/* STEP 0: CHOICE */}
+                {resetStep === 0 && (
+                  <div className="space-y-4 animate-slide-in">
+                    <p className="text-xs text-neon-cyan tracking-widest font-mono mb-2">{'>> '} SELECT_RECOVERY_METHOD:</p>
+
+                    <button type="button" onClick={() => setResetStep(1)} className="w-full p-4 border border-neon-cyan/30 rounded bg-[#0a0a1a] hover:bg-neon-cyan/10 flex items-center justify-between text-white transition-all">
+                      <span className="flex items-center gap-3 font-mono text-sm"><Mail size={16} /> RESET_VIA_EMAIL</span>
+                      <ChevronRight size={14} className="text-gray-500" />
+                    </button>
+
+                    <button type="button" onClick={() => setResetStep(2)} className="w-full p-4 border border-neon-cyan/30 rounded bg-[#0a0a1a] hover:bg-neon-cyan/10 flex items-center justify-between text-white transition-all">
+                      <span className="flex items-center gap-3 font-mono text-sm"><MessageSquare size={16} /> RESET_VIA_MOBILE (OTP)</span>
+                      <ChevronRight size={14} className="text-gray-500" />
+                    </button>
                   </div>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
-                    placeholder="FULL_NAME"
-                    required={isRegistering}
-                  />
-                </div>
-              </div>
+                )}
+
+                {/* STEP 1: EMAIL RESET */}
+                {resetStep === 1 && (
+                  <div className="space-y-4">
+                    <div className="space-y-1 group">
+                      <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} ENTER_EMAIL_ADDRESS:</label>
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors"><Mail size={16} /></div>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan"
+                          placeholder="name@example.com"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <button type="button" onClick={handleEmailReset} disabled={resetLoading} className="w-full bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-bold py-3 rounded hover:bg-neon-cyan/30">
+                      {resetLoading ? "SENDING_LINK..." : "SEND_RESET_LINK"}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 2: MOBILE INPUT */}
+                {resetStep === 2 && (
+                  <div className="space-y-4">
+                    <div className="space-y-1 group">
+                      <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} ENTER_MOBILE_NUMBER:</label>
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors"><MessageSquare size={16} /></div>
+                        <input
+                          type="tel"
+                          value={mobile}
+                          onChange={(e) => setMobile(e.target.value)}
+                          className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan"
+                          placeholder="+91..."
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <button type="button" onClick={handleMobileInput} disabled={resetLoading} className="w-full bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-bold py-3 rounded hover:bg-neon-cyan/30">
+                      {resetLoading ? "SENDING_OTP..." : "SEND_OTP_CODE"}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 3: OTP VERIFY */}
+                {resetStep === 3 && (
+                  <div className="space-y-4">
+                    <div className="space-y-1 group">
+                      <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} ENTER_VERIFICATION_CODE:</label>
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors"><ShieldCheck size={16} /></div>
+                        <input
+                          type="text"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan tracking-widest"
+                          placeholder="######"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <button type="button" onClick={handleVerifyOTP} disabled={resetLoading} className="w-full bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-bold py-3 rounded hover:bg-neon-cyan/30">
+                      {resetLoading ? "VERIFYING..." : "CONFIRM_CODE"}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 4: NEW PASSWORD */}
+                {resetStep === 4 && (
+                  <div className="space-y-4">
+                    <div className="space-y-1 group">
+                      <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} SET_NEW_PASSWORD:</label>
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors"><Key size={16} /></div>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan"
+                          placeholder="MIN_6_CHARS"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <button type="button" onClick={handleUpdatePassword} disabled={resetLoading} className="w-full bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-bold py-3 rounded hover:bg-neon-cyan/30">
+                      {resetLoading ? "UPDATING..." : "UPDATE_CREDENTIALS"}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Email Field */}
-            <div className="space-y-1 group">
-              <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} NET_ADDRESS:</label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
-                  <Mail size={16} />
-                </div>
-                <input
-                  type="text"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
-                  placeholder="USER@DOMAIN.EXT"
-                  required
-                />
-              </div>
-            </div>
+            {/* 2. REGULAR LOGIN/REGISTER MODE */}
+            {!isResetting && (
+              <>
+                {/* Signup Name Field - Only show if Registering */}
+                {isRegistering && (
+                  <div className="space-y-1 group">
+                    <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} ENTER_IDENTITY:</label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
+                        <Cpu size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
+                        placeholder="FULL_NAME"
+                        required={isRegistering}
+                      />
+                    </div>
+                  </div>
+                )}
 
-            {/* Password Field */}
-            <div className="space-y-1 group">
-              <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} SECURITY_KEY:</label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
-                  <Lock size={16} />
+                {/* Email Field */}
+                <div className="space-y-1 group">
+                  <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} NET_ADDRESS:</label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
+                      <Mail size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
+                      placeholder="USER@DOMAIN.EXT"
+                      required
+                    />
+                  </div>
                 </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-            </div>
 
-            {/* Forgot Password Link - Only show if NOT registering */}
-            {!isRegistering && (
-              <div className="flex justify-end -mt-4">
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  className="text-[10px] text-neon-cyan/60 hover:text-neon-cyan tracking-widest font-mono hover:underline"
-                >
-                  FORGOT_ACCESS_KEY?
-                </button>
-              </div>
+                {/* Mobile Field - Register Only */}
+                {isRegistering && (
+                  <div className="space-y-1 group">
+                    <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} COMM_UPLINK (MOBILE):</label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
+                        <MessageSquare size={16} />
+                      </div>
+                      <input
+                        type="tel"
+                        value={mobile}
+                        onChange={(e) => setMobile(e.target.value)}
+                        className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
+                        placeholder="+91 99999 99999"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Password Field */}
+                <div className="space-y-1 group">
+                  <label className="text-[10px] text-neon-cyan tracking-widest font-mono ml-1">{'>> '} SECURITY_KEY:</label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-neon-cyan transition-colors">
+                      <Lock size={16} />
+                    </div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg py-3 pl-10 pr-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Forgot Password Link */}
+                <div className="flex justify-end -mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsResetting(true)}
+                    className="text-[10px] text-neon-cyan/60 hover:text-neon-cyan tracking-widest font-mono hover:underline"
+                  >
+                    FORGOT_ACCESS_KEY?
+                  </button>
+                </div>
+              </>
             )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full relative group overflow-hidden bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan font-bold py-3 rounded-lg tracking-[0.2em] hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.3)] transition-all cursor-pointer"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <Lock size={14} /> {loading ? "PROCESSING..." : (isRegistering ? "REGISTER" : "LOGIN")}
-              </span>
-            </button>
+            {/* Submit Button (Hide during Reset as it has own buttons) */}
+            {!isResetting && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full relative group overflow-hidden bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan font-bold py-3 rounded-lg tracking-[0.2em] hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,243,255,0.3)] transition-all cursor-pointer"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Lock size={14} />
+                  {loading ? "PROCESSING..." : (
+                    isRegistering ? "REGISTER_IDENTITY" : "LOGIN_ACCESS"
+                  )}
+                </span>
+              </button>
+            )}
           </form>
 
           {/* Divider */}
@@ -251,9 +532,17 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
           {/* Social Auth */}
           <div className="grid grid-cols-2 gap-4">
             <button
-              onClick={() => {
+              onClick={async () => {
                 console.log('Button clicked: github');
-                onLogin('github');
+                const error = await onLogin('github');
+                if (error) {
+                  let msg = error.message || "GITHUB_AUTH_FAILED";
+
+                  if (error.code === 'auth/popup-closed-by-user') msg = "ACCESS_DENIED_BY_USER";
+                  if (error.code === 'auth/network-request-failed') msg = "UPLINK_OFFLINE_CHECK_NET";
+
+                  setError(msg);
+                }
               }}
               className="flex items-center justify-center gap-2 py-3 border border-neon-cyan/50 rounded bg-[#050510]/80 hover:bg-neon-cyan/10 hover:shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all text-white text-xs tracking-wider cursor-pointer"
             >
@@ -261,9 +550,17 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
               {loading ? "ESTABLISHING..." : "GITHUB"}
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 console.log('Button clicked: google');
-                onLogin('google');
+                const error = await onLogin('google');
+                if (error) {
+                  let msg = error.message || "GOOGLE_AUTH_FAILED";
+
+                  if (error.code === 'auth/popup-closed-by-user') msg = "ACCESS_DENIED_BY_USER";
+                  if (error.code === 'auth/network-request-failed') msg = "UPLINK_OFFLINE_CHECK_NET";
+
+                  setError(msg);
+                }
               }}
               className="flex items-center justify-center gap-2 py-3 border border-neon-cyan/50 rounded bg-[#050510]/80 hover:bg-neon-cyan/10 hover:shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all text-white text-xs tracking-wider cursor-pointer"
             >
@@ -275,16 +572,78 @@ function Login({ onLogin, onManualLogin, onManualSignup, onPasswordReset, onAcco
           {/* Toggle Mode */}
           <div className="mt-8 text-center">
             <button
-              onClick={toggleMode}
+              onClick={() => {
+                if (isResetting) {
+                  setIsResetting(false);
+                  setResetStep(0);
+                } else {
+                  toggleMode();
+                }
+              }}
               className="text-xs text-gray-500 hover:text-neon-cyan transition-colors flex items-center justify-center gap-1 mx-auto group cursor-pointer"
             >
               <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              {isRegistering ? ">> EXISTING_USER? LOGIN_IDENTITY" : ">> NEW_USER? REGISTER_IDENTITY"}
+              {isResetting
+                ? "<< ABORT_RESET_SEQUENCE"
+                : (isRegistering ? ">> EXISTING_USER? LOGIN_IDENTITY" : ">> NEW_USER? REGISTER_IDENTITY")
+              }
             </button>
           </div>
 
         </div>
       </div>
+
+      {/* CHANGE PASSWORD MODAL */}
+      {isFirstLogin && (
+        <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0a0a1a] border border-neon-cyan rounded-xl p-6 w-full max-w-md shadow-[0_0_50px_rgba(0,243,255,0.2)]">
+            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+              <ShieldCheck className="text-neon-cyan" /> SECURITY_UPDATE_REQUIRED
+            </h2>
+            <p className="text-xs text-gray-400 mb-6 font-mono">
+              {">>"} FIRST_LOGIN_DETECTED: PLEASE_UPDATE_CREDENTIALS
+            </p>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5051";
+                const res = await axios.post(`${apiBase}/api/auth/change-password`, {
+                  userId: tempUserId,
+                  newPassword
+                });
+                if (res.data.success) {
+                  alert("SUCCESS: PASSWORD_UPDATED. PLEASE_LOGIN_AGAIN.");
+                  setIsFirstLogin(false);
+                  setTempUserId(null);
+                  setNewPassword("");
+                  setPassword(""); // Clear old password
+                }
+              } catch (err) {
+                alert("ERROR: " + (err.response?.data?.message || "UPDATE_FAILED"));
+              }
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] text-neon-cyan tracking-widest font-mono">NEW_SECURITY_KEY</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-[#050510] border border-[#30363d] rounded p-3 text-white focus:border-neon-cyan outline-none font-mono mt-1"
+                    placeholder="MIN_6_CHARS"
+                  />
+                </div>
+                <button type="submit" className="w-full bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-bold py-3 rounded hover:bg-neon-cyan/30 transition-all">
+                  CONFIRM_NEW_CREDENTIALS
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

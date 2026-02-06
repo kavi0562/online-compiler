@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { MessageSquare, X, Cpu, Zap, ChevronRight, Terminal, Copy, Check, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { MessageSquare, X, Cpu, Zap, ChevronRight, Terminal, Copy, Check, Mic, MicOff, Volume2, VolumeX, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -142,6 +142,16 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
         }
     };
 
+    const clearChat = () => {
+        if (window.confirm("Purge all neural memory systems? This action cannot be undone.")) {
+            setMessages([
+                { role: 'ai', content: 'Systems Online. I am your AI Co-Pilot. Ready to assist with code generation and debugging.' }
+            ]);
+            setInput('');
+        }
+    };
+
+
     const handleCopy = (code, index) => {
         navigator.clipboard.writeText(code);
         setCopiedIndex(index);
@@ -250,6 +260,14 @@ const ChatAssistant = ({ language, onInsertCode, onLanguageChange }) => {
                             <span className="text-sm font-bold text-white tracking-widest">AI_CO_PILOT</span>
                         </div>
                         <div className="flex items-center gap-2">
+                            {/* CLEAR CHAT */}
+                            <button
+                                onClick={clearChat}
+                                className="p-1.5 rounded-lg transition-colors text-gray-500 hover:text-red-500 hover:bg-red-500/10"
+                                title="Clear History"
+                            >
+                                <Trash2 size={16} />
+                            </button>
                             {/* VOICE TOGGLE */}
                             <button
                                 onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
