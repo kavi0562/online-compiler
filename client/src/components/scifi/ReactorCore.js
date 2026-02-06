@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Editor from "@monaco-editor/react";
-import { Hexagon, Maximize2, Minimize2, Trash2, Copy, Check } from 'lucide-react';
+import { Hexagon, Maximize2, Minimize2, Trash2, Copy, Check, Play } from 'lucide-react';
 
 import { Rnd } from 'react-rnd';
 
-const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHover, isMaximized, onToggleMaximize, onClear }) => {
+const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHover, isMaximized, onToggleMaximize, onClear, onRun }) => {
     const editorRef = useRef(null);
     const containerRef = useRef(null);
     const [isCopied, setIsCopied] = useState(false);
@@ -87,6 +87,14 @@ const ReactorCore = ({ code, language, onChange, isError, isThinking, ignitionHo
                 <div className="flex items-center gap-4">
                     {isThinking && <span className="text-xs text-neon-magenta animate-flicker">PROCESSING...</span>}
                     {isError && <span className="text-xs text-neon-red animate-flicker">CRITICAL INSTABILITY</span>}
+
+                    <button
+                        onClick={onRun}
+                        className="flex items-center gap-2 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan hover:text-black px-3 py-1 rounded transition-all font-bold text-xs border border-neon-cyan/50 hover:shadow-[0_0_15px_rgba(0,243,255,0.4)] mr-2"
+                        title="Run Code"
+                    >
+                        <Play size={12} fill="currentColor" /> RUN
+                    </button>
 
                     <button
                         onClick={handleCopy}

@@ -17,6 +17,26 @@ const checkAdmin = async (req, res, next) => {
 };
 
 /**
+ * @route   GET /api/admin/users
+ * @desc    Get all users (for Admin Dashboard)
+ * @access  Admin Only
+ */
+router.get("/users", checkAdmin, async (req, res) => {
+  try {
+    // Fetch all users, sort by newest first
+    // Exclude password and githubAccessToken for security
+    const users = await User.find()
+      .select("-password -githubAccessToken")
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    console.error("ADMIN_GET_USERS_ERROR:", error);
+    res.status(500).json({ message: "Server error fetching users." });
+  }
+});
+
+/**
  * @route   POST /api/admin/create-user
  * @desc    Provision a new user (Student/Faculty)
  * @access  Admin Only

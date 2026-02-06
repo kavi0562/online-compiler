@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import ReactorCore from "./scifi/ReactorCore";
-import ControlDeck from "./scifi/ControlDeck";
+
 import HoloTerminal from "./scifi/HoloTerminal";
 import LanguageSelector from "./LanguageSelector";
 import FileUpload from "./FileUpload";
 import GithubSyncPanel from "./scifi/GithubSyncPanel";
 import ChatAssistant from "./scifi/ChatAssistant";
 import TemporalLogs from "./scifi/TemporalLogs";
-import ReactorLogo from "./scifi/ReactorLogo";
 import { LayoutTemplate, Database, Download, Share2, Copy } from "lucide-react";
 import { LANGUAGES } from "../data/languages";
 
@@ -37,10 +36,9 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   const [languages] = useState(LANGUAGES);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [ignitionHover, setIgnitionHover] = useState(false);
+
   const [history, setHistory] = useState([]);
   const [activeLogId, setActiveLogId] = useState(null);
 
@@ -400,7 +398,6 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
   };
 
   const executeCodeActually = async () => {
-    setLoading(true);
     setIsThinking(false);
     const startTime = Date.now();
     const runId = Date.now();
@@ -469,8 +466,6 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
       setHistory(prev => [newLog, ...prev].slice(0, 10));
       setActiveLogId(runId);
     } finally {
-      setLoading(false);
-
       // TRIGGER AUTO-PUSH (Background Process)
       if (isAutoPushEnabled && repo && user) {
         handleAutoPush(runId);
@@ -723,33 +718,21 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
           </div>
         )}
 
-        {/* Header / Stats (Top Left) */}
-        <div className="hidden md:flex col-span-12 md:col-span-3 row-span-2 bg-glass border border-glass rounded-2xl p-4 items-center justify-between shadow-lg backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-neon-cyan/5 rounded-lg border border-neon-cyan/20">
-              <ReactorLogo className="w-6 h-6 text-neon-cyan" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-wider text-white">N <span className="text-neon-cyan">COMPILER</span></h1>
-              <span className="text-[10px] text-gray-400">N COMPILER – SYSTEM STATUS: ONLINE</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Language Selector (Top Middle) */}
-        <div className="w-full md:col-span-5 md:row-span-2 bg-glass border border-glass rounded-2xl p-4 flex flex-col justify-center shadow-lg relative group z-50 order-1 md:order-none">
+
+        <div className="w-full md:col-span-3 md:row-span-2 bg-glass border border-glass rounded-2xl p-4 flex flex-col justify-center shadow-lg relative group z-50 order-1 md:order-none">
           <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity pointer-events-none hidden md:block">
             <Database size={40} className="text-neon-magenta" />
           </div>
           <span className="text-[10px] text-neon-magenta tracking-widest mb-1 font-bold">ACTIVE MODULE</span>
           <div className="flex flex-col gap-3 w-full">
-            {/* Active Module & Actions Row */}
+            {/* Active Module Row */}
             <div className="flex items-center gap-2 w-full">
               <div className="flex-1 min-w-0">
                 <LanguageSelector languages={languages} selected={language} onSelect={handleLanguageChange} />
               </div>
 
-              {/* Action Toolbar */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-1 shrink-0">
                 {/* Upload Button */}
                 <div className="w-[34px] h-[34px]">
@@ -806,48 +789,60 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
           </div>
         </div>
 
-        {/* Stdin (Top Right) */}
-        <div className="hidden md:flex col-span-6 md:col-span-4 row-span-2 bg-glass border border-glass rounded-2xl p-3 flex-col shadow-lg relative h-full overflow-hidden">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-neon-cyan tracking-widest font-bold flex items-center gap-2">
-              <LayoutTemplate size={12} /> INPUT
-            </span>
+
+        <div className="w-full md:col-span-5 md:row-span-2 flex items-center justify-center relative order-2 md:order-none pointer-events-none">
+          {/* Empty Space as requested */}
+        </div>
+
+
+        {/* RIGHT SIDEBAR: Input & Output Stacked (Desktop Only) */}
+        <div className="hidden md:flex col-span-4 row-span-9 flex-col gap-2 h-full z-50">
+
+          {/* Stdin (Input) - Attached Top */}
+          <div className="flex-none h-[25%] bg-glass border border-glass rounded-2xl p-3 flex flex-col shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-neon-cyan tracking-widest font-bold flex items-center gap-2">
+                <LayoutTemplate size={12} /> INPUT
+              </span>
+            </div>
+
+            {/* UNIFIED INPUT INTERFACE */}
+            {inputHints.length > 0 ? (
+              <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar p-1">
+                <div className="text-[8px] text-neon-cyan/70 font-bold uppercase tracking-wider mb-1">
+                  REQUIRED INPUTS ({inputHints.length})
+                </div>
+                {inputHints.map((hint, i) => (
+                  <div key={i} className="group flex flex-col gap-1">
+                    <label className="text-[10px] text-neon-cyan font-mono flex items-center gap-2 truncate">
+                      <span className="opacity-50">{i + 1}.</span>
+                      {hint}
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white focus:border-neon-cyan focus:outline-none focus:bg-neon-cyan/5 transition-all placeholder-gray-700 font-mono"
+                      placeholder={`Value for ${hint}...`}
+                      value={formValues[i] || ""}
+                      onChange={(e) => handleFormChange(i, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <textarea
+                className="w-full h-full bg-[#050510]/50 bg-grid border border-[#30363d] rounded-xl p-3 text-[10px] font-mono text-gray-300 focus:border-neon-cyan focus:outline-none resize-none transition-all placeholder-gray-600 custom-scrollbar"
+                placeholder="// Awaiting input data..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                spellCheck={false}
+              />
+            )}
           </div>
 
-
-          {/* UNIFIED INPUT INTERFACE */}
-          {inputHints.length > 0 ? (
-            <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar p-1">
-              <div className="text-[8px] text-neon-cyan/70 font-bold uppercase tracking-wider mb-1">
-                REQUIRED INPUTS ({inputHints.length})
-              </div>
-              {inputHints.map((hint, i) => (
-                <div key={i} className="group flex flex-col gap-1">
-                  <label className="text-[10px] text-neon-cyan font-mono flex items-center gap-2 truncate">
-                    <span className="opacity-50">{i + 1}.</span>
-                    {hint}
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full bg-[#050510]/50 border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white focus:border-neon-cyan focus:outline-none focus:bg-neon-cyan/5 transition-all placeholder-gray-700 font-mono"
-                    placeholder={`Value for ${hint}...`}
-                    value={formValues[i] || ""}
-                    onChange={(e) => handleFormChange(i, e.target.value)}
-                  />
-                </div>
-              ))}
-              {/* Visual Connector to show inputs differ from code */}
-              <div className="h-4"></div>
-            </div>
-          ) : (
-            <textarea
-              className="w-full h-full bg-[#050510]/50 bg-grid border border-[#30363d] rounded-xl p-3 text-[10px] font-mono text-gray-300 focus:border-neon-cyan focus:outline-none resize-none transition-all placeholder-gray-600 custom-scrollbar"
-              placeholder="// Awaiting input data..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              spellCheck={false}
-            />
-          )}
+          {/* Output Terminal - Attached Bottom */}
+          <div className="flex-1 min-h-0 relative">
+            <HoloTerminal output={output} input={input} isError={isError} onClear={clearConsole} />
+          </div>
         </div>
 
         {/* MAIN REACTOR CORE (Center) */}
@@ -858,11 +853,11 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             language={language}
             onChange={handleCodeChange}
             isError={isError}
-            isThinking={isThinking}
-            ignitionHover={ignitionHover}
+            isThinking={isThinking || false}
             isMaximized={isEditorMaximized}
             onToggleMaximize={() => setIsEditorMaximized(!isEditorMaximized)}
             onClear={handleCoreClear}
+            onRun={runCode}
           />
           {/* Connection Beam to Terminal - Desktop Only */}
           {!isThinking && output && !isError && (
@@ -870,8 +865,8 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
           )}
         </div>
 
-        {/* RIGHT SIDEBAR: Core AI + Temporal Logs (Desktop Only) - Protected in Guest Mode */}
-        <div className="hidden md:flex col-span-4 row-span-7 flex-col gap-2">
+        {/* GITHUB SYNC PANEL (Bottom Left) */}
+        <div className="w-full h-[30vh] md:h-auto md:col-span-8 md:row-span-3 min-h-0 relative z-20 order-3 md:order-none mt-4 md:mt-0">
           <GithubSyncPanel
             onUplink={handleUplink}
             onConnectGithub={onConnectGithub}
@@ -884,23 +879,14 @@ function UserDashboard({ githubToken, user, role, onConnectGithub }) {
             isAutoPushEnabled={isAutoPushEnabled}
             onToggleAutoPush={setIsAutoPushEnabled}
           />
+        </div>
+
+        {/* TEMPORAL LOGS (Bottom Right) */}
+        <div className="w-full h-[30vh] md:h-auto md:col-span-4 md:row-span-3 min-h-0 relative z-20 order-4 md:order-none mt-4 md:mt-0">
           <TemporalLogs history={history} onRestore={restoreHistory} onClear={clearHistory} onDelete={handleDeleteHistory} onRefresh={fetchHistory} activeLogId={activeLogId} user={user} onConnectGithub={onConnectGithub} />
         </div>
 
-        {/* HOLO TERMINAL (Bottom) */}
-        <div className="w-full h-[30vh] md:h-auto md:col-span-8 md:row-span-3 min-h-0 relative z-20 order-3 md:order-none mt-4 md:mt-0">
-          <HoloTerminal output={output} input={input} isError={isError} onClear={clearConsole} />
-        </div>
 
-        {/* CONTROL DECK (Bottom Right) */}
-        <div className="w-full md:col-span-4 md:row-span-3 flex items-start justify-center pt-2 order-4 md:order-none py-4 md:py-0">
-          <ControlDeck
-            onRun={runCode}
-            onClear={clearConsole}
-            isThinking={isThinking || loading}
-            onHoverChange={setIgnitionHover}
-          />
-        </div>
 
 
         {/* AI CHAT ASSISTANT OVERLAY */}

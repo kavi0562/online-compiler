@@ -28,6 +28,25 @@ const LANGUAGE_CONFIG = {
     java: { fileName: 'Main.java' }
 };
 
+// --- HELPER --
+const adjustLineNumbers = (output, offset) => {
+    if (!output || offset === 0) return output;
+    return output.split('\n').map(line => {
+        const match = line.match(/^([\w\.]+):(\d+)(:.*)?$/);
+        if (match) {
+            const fileName = match[1];
+            const lineNum = parseInt(match[2]);
+            const rest = match[3] || '';
+            const newLineNum = lineNum - offset;
+
+            if (newLineNum > 0) {
+                return `${fileName}:${newLineNum}${rest}`;
+            }
+        }
+        return line;
+    }).join('\n');
+};
+
 /**
  * Execute code using Docker Sandbox
  */
@@ -51,11 +70,13 @@ const executeDocker = async (langInput, code, input) => {
 
     let config = LANGUAGE_CONFIG[language];
     let finalCode = code;
+    let lineOffset = 0; // Track added lines
 
     // --- C LANGUAGE PRE-PROCESS ---
     if (language === 'c') {
         if (!finalCode.includes('#include <stdio.h>')) {
             finalCode = '#include <stdio.h>\n' + finalCode;
+            lineOffset = 1;
         }
     }
 
@@ -79,6 +100,7 @@ const executeDocker = async (langInput, code, input) => {
                     'public class Main {\n    public static void main(String[] args) {\n'
                 );
                 finalCode += '\n    }\n}';
+                lineOffset = 1; // "public class Main {" becomes 2 lines.
             } else {
                 const imports = [];
                 const otherLines = [];
@@ -87,6 +109,7 @@ const executeDocker = async (langInput, code, input) => {
                     else otherLines.push(line);
                 });
                 finalCode = `${imports.join('\n')}\npublic class Main {\n    public static void main(String[] args) {\n${otherLines.join('\n')}\n    }\n}`;
+                lineOffset = 2; // wrapper adds 2 lines (excluding imports)
             }
         }
         config.fileName = 'Main.java';
@@ -138,7 +161,8 @@ const executeDocker = async (langInput, code, input) => {
                     }
                 } catch (e) { /* ignore */ }
 
-                const output = (stdout || "") + (stderr || "");
+                const output = ((stdout || "") + (stderr || "")).replace(/\/app\//g, '');
+                const adjustedOutput = adjustLineNumbers(output, lineOffset);
 
                 if (error && error.killed) {
                     resolve({
@@ -148,7 +172,7 @@ const executeDocker = async (langInput, code, input) => {
                     });
                 } else {
                     resolve({
-                        output: output,
+                        output: adjustedOutput,
                         isError: !!error,
                         duration
                     });

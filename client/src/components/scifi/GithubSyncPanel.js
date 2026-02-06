@@ -79,65 +79,72 @@ const GithubSyncPanel = ({
                 </div>
             ) : null}
 
-            {/* Inputs (Blurred or Disabled if not linked, but overlay covers them) */}
-            <div className={`flex flex-col gap-y-4 relative z-10 w-full ${!isLinked ? 'opacity-20 pointer-events-none' : ''}`}>
-                <div className="relative w-full">
-                    <span className="absolute top-1.5 left-2 text-[9px] text-gray-500 font-mono">TARGET_REPO</span>
-                    <input
-                        type="text"
-                        value={repo}
-                        onChange={(e) => onRepoChange(e.target.value)}
-                        className="w-full bg-[#050510]/60 border border-[#30363d] rounded-lg pt-5 pb-1.5 px-2 text-xs font-mono text-white placeholder-gray-700 focus:border-neon-cyan focus:outline-none transition-colors"
-                        placeholder="username/repo-name"
-                    />
-                </div>
-                <div className="relative w-full">
-                    <span className="absolute top-1.5 left-2 text-[9px] text-gray-500 font-mono">COMMIT_MSG</span>
-                    <input
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        className="w-full bg-[#050510]/60 border border-[#30363d] rounded-lg pt-5 pb-1.5 px-2 text-xs font-mono text-white placeholder-gray-700 focus:border-neon-cyan focus:outline-none transition-colors"
-                        placeholder="Initial Commit..."
-                    />
+            {/* Inputs & Controls Grid */}
+            <div className={`grid grid-cols-2 gap-4 relative z-10 w-full ${!isLinked ? 'opacity-20 pointer-events-none' : ''}`}>
+
+                {/* Left Column: Inputs */}
+                <div className="flex flex-col gap-y-4">
+                    <div className="relative w-full">
+                        <span className="absolute top-1.5 left-2 text-[9px] text-gray-500 font-mono">TARGET_REPO</span>
+                        <input
+                            type="text"
+                            value={repo}
+                            onChange={(e) => onRepoChange(e.target.value)}
+                            className="w-full bg-[#050510]/60 border border-[#30363d] rounded-lg pt-5 pb-1.5 px-2 text-xs font-mono text-white placeholder-gray-700 focus:border-neon-cyan focus:outline-none transition-colors"
+                            placeholder="username/repo-name"
+                        />
+                    </div>
+                    <div className="relative w-full">
+                        <span className="absolute top-1.5 left-2 text-[9px] text-gray-500 font-mono">COMMIT_MSG</span>
+                        <input
+                            type="text"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            className="w-full bg-[#050510]/60 border border-[#30363d] rounded-lg pt-5 pb-1.5 px-2 text-xs font-mono text-white placeholder-gray-700 focus:border-neon-cyan focus:outline-none transition-colors"
+                            placeholder="Initial Commit..."
+                        />
+                    </div>
                 </div>
 
-                {/* Auto-Push Toggle */}
-                <div className="flex items-center justify-between bg-[#050510]/40 p-2 rounded-lg border border-[#30363d]">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-neon-cyan/80 font-bold tracking-wider">AUTO-PUSH ON RUN</span>
-                        <span className="text-[8px] text-gray-500">Syncs every execution</span>
+                {/* Right Column: Actions */}
+                <div className="flex flex-col gap-y-4 justify-end">
+                    {/* Auto-Push Toggle */}
+                    <div className="flex items-center justify-between bg-[#050510]/40 p-2 rounded-lg border border-[#30363d] h-[48px]">
+                        <div className="flex flex-col justify-center">
+                            <span className="text-[10px] text-neon-cyan/80 font-bold tracking-wider">AUTO-PUSH</span>
+                            <span className="text-[8px] text-gray-500">Sync on run</span>
+                        </div>
+
+                        <button
+                            onClick={() => onToggleAutoPush(!isAutoPushEnabled)}
+                            className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${isAutoPushEnabled ? 'bg-neon-cyan/20 border border-neon-cyan' : 'bg-gray-800 border border-gray-600'}`}
+                        >
+                            <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-300 ${isAutoPushEnabled ? 'left-[18px] bg-neon-cyan shadow-[0_0_8px_rgba(0,243,255,0.8)]' : 'left-0.5 bg-gray-500'}`}></div>
+                        </button>
                     </div>
 
+                    {/* Action Button */}
                     <button
-                        onClick={() => onToggleAutoPush(!isAutoPushEnabled)}
-                        className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${isAutoPushEnabled ? 'bg-neon-cyan/20 border border-neon-cyan' : 'bg-gray-800 border border-gray-600'}`}
+                        onClick={handleUplink}
+                        disabled={isDisabled || !repo || !message}
+                        className={`w-full h-[48px] rounded-lg font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all
+                            ${isDisabled
+                                ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                                : 'bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/50 hover:border-neon-cyan text-neon-cyan hover:shadow-[0_0_15px_rgba(0,243,255,0.4)]'
+                            }`}
                     >
-                        <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-300 ${isAutoPushEnabled ? 'left-[18px] bg-neon-cyan shadow-[0_0_8px_rgba(0,243,255,0.8)]' : 'left-0.5 bg-gray-500'}`}></div>
+                        {isUplinking ? (
+                            <>
+                                <UploadCloud size={14} className="animate-bounce" /> UPLINKING...
+                            </>
+                        ) : (
+                            <>
+                                <UploadCloud size={14} /> INITIATE UPLINK
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
-
-            {/* Action Button */}
-            <button
-                onClick={handleUplink}
-                disabled={isDisabled || !repo || !message}
-                className={`w-full py-2.5 rounded-lg font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all z-10
-                    ${isDisabled
-                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
-                        : 'bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/50 hover:border-neon-cyan text-neon-cyan hover:shadow-[0_0_15px_rgba(0,243,255,0.4)]'
-                    }`}
-            >
-                {isUplinking ? (
-                    <>
-                        <UploadCloud size={14} className="animate-bounce" /> UPLINKING...
-                    </>
-                ) : (
-                    <>
-                        <UploadCloud size={14} /> INITIATE UPLINK
-                    </>
-                )}
-            </button>
 
             {/* Background Decoration */}
             <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(45deg,transparent_25%,rgba(0,243,255,0.1)_25%,rgba(0,243,255,0.1)_50%,transparent_50%,transparent_75%,rgba(0,243,255,0.1)_75%,rgba(0,243,255,0.1)_100%)] bg-[length:10px_10px]"></div>
