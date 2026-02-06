@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import Home from "./pages/Home";
+import NotFound from "./pages/NotFound";
 
 const CompilerPage = lazy(() => import("./pages/CompilerPage"));
 
@@ -17,6 +18,7 @@ function App() {
             </Suspense>
           }
         />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

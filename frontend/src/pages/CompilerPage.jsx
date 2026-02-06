@@ -1,8 +1,10 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Editor from '../components/Editor';
 import Output from '../components/Output';
 import SEO from '../components/SEO';
+import Breadcrumbs from '../components/Breadcrumbs';
+import { languageContent } from '../data/languageContent';
 
 const languageConfig = {
     python: {
@@ -34,11 +36,14 @@ const languageConfig = {
 
 export default function CompilerPage() {
     const { lang } = useParams();
-    const config = languageConfig[lang?.toLowerCase()] || {
+    const normalizedLang = lang?.toLowerCase();
+    const config = languageConfig[normalizedLang] || {
         title: "Online Code Compiler",
         description: "Run code online in multiple languages including Python, Java, C++, and more.",
         keywords: "online compiler, code editor, programming"
     };
+
+    const content = languageContent[normalizedLang];
 
     return (
         <>
@@ -50,11 +55,14 @@ export default function CompilerPage() {
             />
             <Navbar />
             <div className="container mx-auto px-4 py-6">
+                <Breadcrumbs items={[{ name: 'Home', url: '/' }, { name: `${lang} Compiler`, url: null }]} />
+
                 <header className="mb-6 text-center">
-                    <h1 className="text-3xl font-bold mb-2 capitalize">{lang ? `${lang} Compiler` : 'Online Compiler'}</h1>
-                    <p className="text-gray-400">{config.description}</p>
+                    <h1 className="text-3xl font-bold mb-2 capitalize">{content?.title || `${lang} Compiler`}</h1>
+                    <p className="text-gray-400">{content?.heroText || config.description}</p>
                 </header>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100vh-200px)]">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[700px] mb-12">
                     <div className="h-full">
                         <Editor />
                     </div>
@@ -62,6 +70,32 @@ export default function CompilerPage() {
                         <Output />
                     </div>
                 </div>
+
+                {/* Deep Content Section for SEO */}
+                {content && (
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+                        <div className="lg:col-span-3">
+                            <div
+                                className="prose prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: content.content }}
+                            />
+                        </div>
+                        <div className="bg-base-200 p-6 rounded-lg h-fit">
+                            <h3 className="text-xl font-bold mb-4">Other Compilers</h3>
+                            <ul className="space-y-2">
+                                {Object.keys(languageConfig).map(l => (
+                                    l !== normalizedLang && (
+                                        <li key={l}>
+                                            <Link to={`/compiler/${l}`} className="text-blue-400 hover:underline capitalize">
+                                                {l} Compiler
+                                            </Link>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
