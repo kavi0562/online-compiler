@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="N Compiler - Online Code Editor" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>N Compiler</title>
+  <script type="module" crossorigin src="/assets/index-BlxQ9Cxq.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CxokXxSi.css">
+</head>
+
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <!-- Suppress LSP-related errors from monaco-languageclient (runs BEFORE React) -->
+    <script>
+        window.addEventListener('unhandledrejection', function (event) {
+            var msg = (event.reason && event.reason.message) || String(event.reason || '');
+            if (
+                msg.indexOf('Client is not running') !== -1 ||
+                msg.indexOf('Pending response rejected') !== -1 ||
+                msg.indexOf('connection got disposed') !== -1 ||
+                msg.indexOf('Server initialization failed') !== -1 ||
+                msg.indexOf("couldn't create connection") !== -1
+            ) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+            }
+        });
+        window.addEventListener('error', function (event) {
+            var msg = (event.message || '');
+            if (
+                msg.indexOf('Client is not running') !== -1 ||
+                msg.indexOf('Pending response rejected') !== -1 ||
+                msg.indexOf('connection got disposed') !== -1
+            ) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                return true;
+            }
+        });
+    </script>
+    <div id="root"></div>
+</body>
+
+</html>
